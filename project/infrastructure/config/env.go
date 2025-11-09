@@ -9,8 +9,6 @@ import (
 // Config は環境変数から読み込まれるアプリケーション設定を表します
 type Config struct {
 	// 基本設定
-	Env        string // dev/prod
-	Port       string
 	AppBaseURL string
 	GcpProject string
 	Region     string
@@ -63,8 +61,6 @@ func NewConfig() (*Config, error) {
 
 	config := &Config{
 		// 基本設定
-		Env:        getEnvOrDefault("ENV", "dev"),
-		Port:       getEnvOrDefault("PORT", "8080"),
 		AppBaseURL: mustGetEnv("APP_BASE_URL"),
 		GcpProject: mustGetEnv("GCP_PROJECT"),
 		Region:     mustGetEnv("REGION"),
@@ -105,12 +101,4 @@ func mustGetEnv(key string) string {
 		panic(fmt.Sprintf("required environment variable not set: %s", key))
 	}
 	return value
-}
-
-// getEnvOrDefault は環境変数を取得し、存在しない場合はデフォルト値を返します
-func getEnvOrDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
