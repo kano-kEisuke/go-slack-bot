@@ -11,7 +11,7 @@ type Tenant struct {
 	TeamID string
 
 	// ManagerUserID は上長のSlackユーザーID。
-	// nilの場合は上長未設定を表します
+	// nilの場合は上長未設定を表す
 	ManagerUserID *string
 
 	// BotTokenSecretName はSecret Managerに保存されたBotトークンのシークレット名

@@ -175,8 +175,8 @@ project/
 │       └── 🌱 アプリの起動係（設定を読み込んでHTTPサーバーを起動）
 │
 ├── domain/                               🎯 ビジネスルール（純粋な設計）
-│   ├── entity.go        → Tenant, Mention の形（データの設計図）
-│   ├── repository.go    → Firestoreとの出入りの約束（interface）
+│   ├── entity.go        → Tenant, Mention の形（データの設計図）　✅
+│   ├── repository.go    → Firestoreとの出入りの約束（interface）　✅
 │   └── err.go
 ├── handler/                              🚪 HTTPリクエストの入口
 │   ├── events_handler.go    → Slackのメンションイベントを受け取る
@@ -210,7 +210,7 @@ project/
 │   ├── secret/
 │   │   └── manager.go      → Secret Manager実装（金庫でトークン管理）
 │   └── config/
-│       └── env.go          → 🌍 環境変数読込（Config構造体）
+│       └── env.go          → 🌍 環境変数読込（Config構造体）　✅
 │
 └── go.mod / go.sum
     └── 📜 Goの依存管理ファイル（外部パッケージやバージョン情報）
