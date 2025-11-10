@@ -167,31 +167,54 @@
 - 保存されるデータに**個人情報・本文が含まれていない**
 
 
-ディレクトリ構造
+Slack Reminder Bot（構成図）
+
 project/
-├── cmd/server/main.go
-├── domain/
-│   ├── entity.go              # Tenant/Mention
-│   └── repository.go          # MentionRepo / TenantRepo
-├── handler/
-│   ├── events_handler.go      # POST /slack/events
-│   ├── commands_handler.go    # POST /slack/commands
-│   ├── remind_handler.go      # POST /check/remind
-│   ├── escalate_handler.go    # POST /check/escalate
-│   └── oauth_handler.go       # GET/POST /slack/oauth/callback（←新規）
-├── service/
-│   ├── port.go                # SlackPort(トークン動的切替) / TaskPort / SecretPort（←追加）
-│   ├── model.go
+├── cmd/
+│   └── main.go
+│       └── 🌱 アプリの起動係（設定を読み込んでHTTPサーバーを起動）
+│
+├── domain/                               🎯 ビジネスルール（純粋な設計）
+│   ├── entity.go        → Tenant, Mention の形（データの設計図）
+│   ├── repository.go    → Firestoreとの出入りの約束（interface）
+│   └── err.go
+├── handler/                              🚪 HTTPリクエストの入口
+│   ├── events_handler.go    → Slackのメンションイベントを受け取る
+│   ├── commands_handler.go  → /_set_manager などスラッシュコマンド処理
+│   ├── remind_handler.go    → Cloud Tasks からの10分後リマインド処理
+│   ├── escalate_handler.go  → Cloud Tasks からの30分後上長通知処理
+│   └── oauth_handler.go     → Slackインストール完了（OAuth）処理
+│
+├── service/                              🧠 ユースケースの中核ロジック
+│   ├── port.go         → SlackPort / TaskPort / SecretPort の約束(interface)
+│   ├── model.go        → 内部処理用の軽いデータ型（MentionEventなど）
 │   └── reminder_service.go
-├── dto/
-│   ├── slack_event.go
-│   ├── slack_command.go
-│   └── task_payload.go
-├── infrastructure/
-│   ├── slack/client.go        # SlackPort実装（team_idでトークン引く）
-│   ├── store/firestore.go     # Tenant/Mention永続化
-│   ├── tasks/cloudtasks.go
-│   ├── httpsec/slack_verify.go
-│   ├── secret/manager.go      # ← Secret Managerラッパ（新規）
-│   └── config/env.go
+│       ├── OnMention     → メンション検知 → Firestore保存 → タスク予約
+│       ├── CheckRemind   → 10分後に返信がなければリマインド
+│       └── CheckEscalate → 30分後も返信なければ再通知 + 上長DM
+│
+├── dto/                                  📦 外部とのデータ受け渡し箱
+│   ├── slack_event.go    → Events API 用
+│   ├── slack_command.go  → Slash Command 用
+│   └── task_payload.go   → Cloud Tasks 用（team_id, channel_id, ts, user）
+│
+├── infrastructure/                       ⚙️ 技術の詳細（外部とのやり取り）
+│   ├── slack/
+│   │   └── client.go       → Slack API呼び出し実装（SlackPort実体）
+│   ├── store/
+│   │   └── firestore.go    → Firestore保存実装（Repository実体）
+│   ├── tasks/
+│   │   └── cloudtasks.go   → Cloud Tasksスケジュール実装（TaskPort実体）
+│   ├── httpsec/
+│   │   └── slack_verify.go → X-Slack-Signature検証（リクエスト改ざん防止）
+│   ├── secret/
+│   │   └── manager.go      → Secret Manager実装（金庫でトークン管理）
+│   └── config/
+│       └── env.go          → 🌍 環境変数読込（Config構造体）
+│
 └── go.mod / go.sum
+    └── 📜 Goの依存管理ファイル（外部パッケージやバージョン情報）
+
+────────────────────────────
+🔁 全体の流れ
+Slack → handler → service → infrastructure → Firestore / Cloud Tasks / Slack API
