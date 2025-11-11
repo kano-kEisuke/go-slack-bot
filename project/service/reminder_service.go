@@ -145,7 +145,7 @@ func (rs *reminderService) CheckRemind(ctx context.Context, p *TaskPayload) erro
 
 	// リマインド完了フラグ更新
 	if err := rs.mr.MarkReminded(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID); err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if err == domain.ErrMentionNotFound {
 			// 既に削除されているため無視
 			return nil
 		}
@@ -212,7 +212,7 @@ func (rs *reminderService) CheckEscalate(ctx context.Context, p *TaskPayload) er
 
 	// エスカレート完了フラグ更新
 	if err := rs.mr.MarkEscalated(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID); err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if err == domain.ErrMentionNotFound {
 			// 既に削除されているため無視
 			return nil
 		}

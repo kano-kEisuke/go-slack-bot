@@ -186,12 +186,12 @@ project/
 │   └── oauth_handler.go     → Slackインストール完了（OAuth）処理
 │
 ├── service/                              🧠 ユースケースの中核ロジック
-│   ├── port.go         → SlackPort / TaskPort / SecretPort の約束(interface)
-│   ├── model.go        → 内部処理用の軽いデータ型（MentionEventなど）
-│   └── reminder_service.go
-│       ├── OnMention     → メンション検知 → Firestore保存 → タスク予約
-│       ├── CheckRemind   → 10分後に返信がなければリマインド
-│       └── CheckEscalate → 30分後も返信なければ再通知 + 上長DM
+│   ├── port.go         → SlackPort / TaskPort / SecretPort の約束(interface)　✅
+│   ├── model.go        → 内部処理用の軽いデータ型（MentionEventなど）　✅
+│   └── reminder_service.go　✅
+│       ├── OnMention     → メンション検知 → Firestore保存 → タスク予約　✅
+│       ├── CheckRemind   → 10分後に返信がなければリマインド　✅
+│       └── CheckEscalate → 30分後も返信なければ再通知 + 上長DM　✅
 │
 ├── dto/                                  📦 外部とのデータ受け渡し箱
 │   ├── slack_event.go    → Events API 用

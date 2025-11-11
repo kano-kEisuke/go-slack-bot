@@ -3,12 +3,14 @@ package handler
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"slack-bot/project/domain"
 	"slack-bot/project/dto"
+	"slack-bot/project/infrastructure/httpsec"
 )
 
 // CommandsHandler は Slack スラッシュコマンドを処理します
@@ -35,6 +37,24 @@ func NewCommandsHandler(signingSecret string, tenantRepository domain.TenantRepo
 
 // ServeHTTP は Slack スラッシュコマンド受信エンドポイントです
 func (h *CommandsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// body を読み込む（署名検証用）
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, `{"response_type":"ephemeral","text":"リクエスト読み込み失敗"}`)
+		return
+	}
+
+	// Slack 署名検証
+	if err := httpsec.VerifySlackSignature(h.signingSecret,
+		r.Header.Get("X-Slack-Signature"),
+		r.Header.Get("X-Slack-Request-Timestamp"),
+		string(bodyBytes)); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, `{"response_type":"ephemeral","text":"署名検証失敗"}`)
+		return
+	}
+
 	// form パース
 	r.ParseForm()
 	var cmd dto.SlackCommandRequest

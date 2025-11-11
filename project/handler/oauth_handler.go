@@ -100,7 +100,7 @@ func (h *OAuthHandler) exchangeToken(ctx context.Context, code string) (*dto.Sla
 		ClientID:     h.cfg.SlackClientID,
 		ClientSecret: h.cfg.SlackClientSecret,
 		Code:         code,
-		RedirectURI:  h.cfg.AppBaseURL,
+		RedirectURI:  h.cfg.OAuthRedirectURL,
 	}
 
 	bodyBytes, err := json.Marshal(reqBody)
