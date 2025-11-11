@@ -143,3 +143,32 @@ func (sc *SlackClient) PostDM(ctx context.Context, teamID, userID, text string) 
 func (sc *SlackClient) ClearCache() {
 	sc.tokenCache = make(map[string]*slack.Client)
 }
+
+// GetUserID はユーザー名またはメールアドレスからユーザー ID を取得します
+func (sc *SlackClient) GetUserID(ctx context.Context, teamID, userNameOrEmail string) (string, error) {
+	// Slack クライアント取得
+	cli, err := sc.getSlackClient(ctx, teamID, "slack_token_")
+	if err != nil {
+		return "", fmt.Errorf("slack: クライアント取得失敗: %w", err)
+	}
+
+	// ユーザー名で検索（@ を除去）
+	userName := userNameOrEmail
+	if len(userName) > 0 && userName[0] == '@' {
+		userName = userName[1:]
+	}
+
+	// users.list を使ってユーザー名から ID を取得
+	users, err := cli.GetUsersContext(ctx)
+	if err != nil {
+		return "", fmt.Errorf("slack: ユーザー一覧取得失敗: %w", err)
+	}
+
+	for _, u := range users {
+		if u.Name == userName || u.RealName == userName || u.Profile.Email == userNameOrEmail {
+			return u.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("slack: ユーザーが見つかりません: %s", userNameOrEmail)
+}

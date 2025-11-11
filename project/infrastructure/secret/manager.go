@@ -52,6 +52,41 @@ func (m *Manager) GetSecret(ctx context.Context, secretName string) (string, err
 	return secret, nil
 }
 
+// PutSecret はシークレット値を保存または更新します
+func (m *Manager) PutSecret(ctx context.Context, secretName, secretValue string) error {
+	// リソース名
+	name := fmt.Sprintf("projects/%s/secrets/%s", m.projectID, secretName)
+
+	// シークレット作成リクエスト（既存の場合はスキップ）
+	createReq := &secretmanagerpb.CreateSecretRequest{
+		Parent:   fmt.Sprintf("projects/%s", m.projectID),
+		SecretId: secretName,
+		Secret:   &secretmanagerpb.Secret{},
+	}
+
+	// 既存チェック（GetSecret でシークレット存在確認）
+	_, err := m.client.GetSecret(ctx, &secretmanagerpb.GetSecretRequest{Name: name})
+	if err != nil {
+		// シークレットが存在しない場合、作成を試みる（エラーは無視）
+		_, _ = m.client.CreateSecret(ctx, createReq)
+	}
+
+	// バージョンを追加
+	addReq := &secretmanagerpb.AddSecretVersionRequest{
+		Parent: name,
+		Payload: &secretmanagerpb.SecretPayload{
+			Data: []byte(secretValue),
+		},
+	}
+
+	_, err = m.client.AddSecretVersion(ctx, addReq)
+	if err != nil {
+		return fmt.Errorf("secret manager: シークレット保存失敗 (name=%s): %w", secretName, err)
+	}
+
+	return nil
+}
+
 // Close は Secret Manager クライアントを閉じます
 func (m *Manager) Close() error {
 	if m.client != nil {

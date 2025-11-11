@@ -115,7 +115,7 @@ func (rs *reminderService) CheckRemind(ctx context.Context, p *TaskPayload) erro
 	// 監視レコード取得
 	m, err := rs.mr.Find(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if err == domain.ErrMentionNotFound {
 			// 古いタスクなのでスキップ
 			return nil
 		}
@@ -160,7 +160,7 @@ func (rs *reminderService) CheckEscalate(ctx context.Context, p *TaskPayload) er
 	// 監視レコード取得
 	m, err := rs.mr.Find(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if err == domain.ErrMentionNotFound {
 			// 古いタスクなのでスキップ
 			return nil
 		}

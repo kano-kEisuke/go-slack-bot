@@ -77,9 +77,9 @@ func (repo *FirestoreRepo) Find(ctx context.Context, teamID, channelID, messageT
 	snapshot, err := docRef.Get(ctx)
 	if err != nil {
 		if isNotFound(err) {
-			return nil, domain.ErrNotFound
+			return nil, domain.ErrMentionNotFound
 		}
-		return nil, fmt.Errorf("firestore: メンション取得失敗 (docID=%s): %w", docID, err)
+		return nil, fmt.Errorf("firestore: メンション取得失敗 (docID=%s): %w", docID, domain.ErrDatabaseError)
 	}
 
 	// Firestore ドキュメントから domain.Mention へ写経
@@ -102,10 +102,10 @@ func (repo *FirestoreRepo) MarkReminded(ctx context.Context, teamID, channelID, 
 	})
 	if err != nil {
 		if isNotFound(err) {
-			// ドキュメントが存在しない場合は ErrNotFound を返す
-			return domain.ErrNotFound
+			// ドキュメントが存在しない場合は ErrMentionNotFound を返す
+			return domain.ErrMentionNotFound
 		}
-		return fmt.Errorf("firestore: Reminded フラグ更新失敗 (docID=%s): %w", docID, err)
+		return fmt.Errorf("firestore: リマインド状態更新失敗 (docID=%s): %w", docID, domain.ErrDatabaseError)
 	}
 
 	return nil
@@ -122,10 +122,10 @@ func (repo *FirestoreRepo) MarkEscalated(ctx context.Context, teamID, channelID,
 	})
 	if err != nil {
 		if isNotFound(err) {
-			// ドキュメントが存在しない場合は ErrNotFound を返す
-			return domain.ErrNotFound
+			// ドキュメントが存在しない場合は ErrMentionNotFound を返す
+			return domain.ErrMentionNotFound
 		}
-		return fmt.Errorf("firestore: Escalated フラグ更新失敗 (docID=%s): %w", docID, err)
+		return fmt.Errorf("firestore: Escalated フラグ更新失敗 (docID=%s): %w", docID, domain.ErrDatabaseError)
 	}
 
 	return nil
@@ -141,9 +141,9 @@ func (repo *FirestoreRepo) Get(ctx context.Context, teamID string) (*domain.Tena
 	snapshot, err := docRef.Get(ctx)
 	if err != nil {
 		if isNotFound(err) {
-			return nil, domain.ErrNotFound
+			return nil, domain.ErrTenantNotRegistered
 		}
-		return nil, fmt.Errorf("firestore: テナント取得失敗 (docID=%s): %w", docID, err)
+		return nil, fmt.Errorf("firestore: テナント取得失敗 (docID=%s): %w", docID, domain.ErrDatabaseError)
 	}
 
 	// Firestore ドキュメントから domain.Tenant へ写経
@@ -194,9 +194,9 @@ func (repo *FirestoreRepo) SetManager(ctx context.Context, teamID string, manage
 	_, err := docRef.Get(ctx)
 	if err != nil {
 		if isNotFound(err) {
-			return domain.ErrNotFound
+			return domain.ErrTenantNotRegistered
 		}
-		return fmt.Errorf("firestore: テナント確認失敗 (docID=%s): %w", docID, err)
+		return fmt.Errorf("firestore: テナント確認失敗 (docID=%s): %w", docID, domain.ErrDatabaseError)
 	}
 
 	// 上長IDを更新
