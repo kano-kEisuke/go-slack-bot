@@ -108,12 +108,13 @@ func (h *EventsHandler) handleEvent(ctx context.Context, req dto.SlackEventReque
 	}
 
 	event := service.MentionEvent{
-		TeamID:    req.TeamID,
-		ChannelID: req.Event.Channel,
-		MessageTS: req.Event.Timestamp,
-		Text:      req.Event.Text,
-		BotUserID: botUserID,
-		NowUnix:   time.Now().Unix(),
+		TeamID:       req.TeamID,
+		ChannelID:    req.Event.Channel,
+		MessageTS:    req.Event.Timestamp,
+		Text:         req.Event.Text,
+		BotUserID:    botUserID,
+		ParentUserID: req.Event.User,
+		NowUnix:      time.Now().Unix(),
 	}
 
 	return h.reminderService.OnMention(ctx, &event)

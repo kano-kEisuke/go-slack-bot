@@ -17,6 +17,9 @@ type MentionEvent struct {
 	// BotUserID はBotのユーザーID（除外対象）
 	BotUserID string
 
+	// ParentUserID はメンションを投稿したユーザーID（メンション返信判定に使用）
+	ParentUserID string
+
 	// NowUnix はイベント発生時刻（Unix秒）
 	NowUnix int64
 }
@@ -34,4 +37,7 @@ type TaskPayload struct {
 
 	// UserID は監視対象のユーザーID
 	UserID string
+
+	// ParentUserID はメンションを投稿したユーザーID
+	ParentUserID string
 }

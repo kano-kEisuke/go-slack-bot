@@ -85,10 +85,11 @@ func (rs *reminderService) OnMention(ctx context.Context, ev *MentionEvent) erro
 
 		// タスクペイロード
 		payload := &TaskPayload{
-			TeamID:    ev.TeamID,
-			ChannelID: ev.ChannelID,
-			MessageTS: ev.MessageTS,
-			UserID:    userID,
+			TeamID:       ev.TeamID,
+			ChannelID:    ev.ChannelID,
+			MessageTS:    ev.MessageTS,
+			UserID:       userID,
+			ParentUserID: ev.ParentUserID,
 		}
 
 		// 実行時刻計算
@@ -127,13 +128,13 @@ func (rs *reminderService) CheckRemind(ctx context.Context, p *TaskPayload) erro
 		return nil
 	}
 
-	// 返信確認
-	replied, err := rs.sp.HasUserReplied(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID, p.MessageTS)
+	// 返信確認（メンション返信の判定）
+	replied, err := rs.sp.HasUserRepliedWithMention(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID, p.ParentUserID, p.MessageTS)
 	if err != nil {
 		return fmt.Errorf("CheckRemind: 返信判定失敗: %w", err)
 	}
 	if replied {
-		// すでに返信済み
+		// すでにメンション付き返信済み
 		return nil
 	}
 
@@ -172,13 +173,13 @@ func (rs *reminderService) CheckEscalate(ctx context.Context, p *TaskPayload) er
 		return nil
 	}
 
-	// 返信確認
-	replied, err := rs.sp.HasUserReplied(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID, p.MessageTS)
+	// 返信確認（メンション返信の判定）
+	replied, err := rs.sp.HasUserRepliedWithMention(ctx, p.TeamID, p.ChannelID, p.MessageTS, p.UserID, p.ParentUserID, p.MessageTS)
 	if err != nil {
 		return fmt.Errorf("CheckEscalate: 返信判定失敗: %w", err)
 	}
 	if replied {
-		// すでに返信済み
+		// すでにメンション付き返信済み
 		return nil
 	}
 

@@ -3,6 +3,7 @@ package slack
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"slack-bot/project/infrastructure/secret"
 
@@ -47,8 +48,18 @@ func (sc *SlackClient) getSlackClient(ctx context.Context, teamID, secretTokenPr
 	return cli, nil
 }
 
-// HasUserReplied は指定ユーザーが返信しているかを判定します
+// HasUserReplied は指定ユーザーが返信元ユーザーへメンション付きで返信しているかを判定します
+// 返信完了の条件: 対象ユーザー(userID)が送信元ユーザー(mentionerUserID)へ @メンション をつけて返信している
 func (sc *SlackClient) HasUserReplied(ctx context.Context, teamID, channelID, messageTS, userID, oldest string) (bool, error) {
+	// この新しいメソッドは ParentUserID が必要になるため、内部実装は以下の通り
+	// 呼び出し側が parentUserID を持っていない場合は以下の実装のままにする
+	return sc.HasUserRepliedWithMention(ctx, teamID, channelID, messageTS, userID, "", oldest)
+}
+
+// HasUserRepliedWithMention は対象ユーザーが送信元ユーザーへメンション付きで返信しているか判定します
+// userID: チェック対象のユーザー（メンションされた人）
+// parentUserID: トリガーメッセージ送信者のユーザーID（メンションした人）
+func (sc *SlackClient) HasUserRepliedWithMention(ctx context.Context, teamID, channelID, messageTS, userID, parentUserID, oldest string) (bool, error) {
 	// Slack クライアント取得
 	cli, err := sc.getSlackClient(ctx, teamID, "slack_token_")
 	if err != nil {
@@ -67,15 +78,27 @@ func (sc *SlackClient) HasUserReplied(ctx context.Context, teamID, channelID, me
 		return false, fmt.Errorf("slack: 返信確認失敗 (channel=%s, ts=%s): %w", channelID, messageTS, err)
 	}
 
-	// メッセージをループして対象ユーザーの投稿を検索
+	// メッセージをループして対象ユーザーのメンション返信を検索
 	for _, msg := range messages {
 		// 親メッセージ自体は除外
 		if msg.Timestamp == messageTS {
 			continue
 		}
-		// 対象ユーザーの投稿があれば true
+
+		// 対象ユーザーが投稿している場合のみチェック
 		if msg.User == userID {
-			return true, nil
+			// parentUserID が指定されている場合は、メンション返信を確認
+			if parentUserID != "" {
+				// userID が parentUserID へメンション (@ユーザーA) をつけているか確認
+				if hasMentionToUser(msg.Text, parentUserID) {
+					return true, nil // メンション返信を発見
+				}
+				// parentUserID へのメンションがない場合は、返信と判定しない
+				continue
+			} else {
+				// parentUserID が指定されていない場合は、単純な投稿で判定
+				return true, nil
+			}
 		}
 	}
 
@@ -83,6 +106,17 @@ func (sc *SlackClient) HasUserReplied(ctx context.Context, teamID, channelID, me
 	// 簡略版: 最初のページで見つからなければ false
 
 	return false, nil
+}
+
+// hasMentionToUser は text 内に特定ユーザーへの @メンション があるか判定します
+func hasMentionToUser(text string, userID string) bool {
+	if text == "" || userID == "" {
+		return false
+	}
+
+	// Slack メンション形式: <@USERID>
+	mentionPattern := fmt.Sprintf("<@%s>", userID)
+	return strings.Contains(text, mentionPattern)
 }
 
 // PostThreadMessage はスレッドにメッセージを投稿します
