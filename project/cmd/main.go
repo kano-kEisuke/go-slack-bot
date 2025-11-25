@@ -75,14 +75,20 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 
+	// ルート（Cloud Run 起動確認用）
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	// 5. サーバー起動
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	addr := fmt.Sprintf(":%s", port)
-	log.Printf("サーバー起動: %s", addr)
+	addr := fmt.Sprintf("0.0.0.0:%s", port)
+	log.Printf("サーバー起動: %s (PORT=%s)", addr, port)
 
 	if err := http.ListenAndServe(addr, mux); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("サーバーエラー: %v", err)
