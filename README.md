@@ -265,3 +265,81 @@ project/
 ────────────────────────────
 🔁 全体の流れ
 Slack → handler → service → infrastructure → Firestore / Cloud Tasks / Slack API
+
+---
+
+## 16. Cloud Run へのデプロイ
+
+### 📦 前提条件
+- Google Cloud SDK (`gcloud`) のインストール
+- Docker のインストール
+- GCP プロジェクトへのアクセス権限
+
+### 🚀 クイックスタート（推奨）
+
+```bash
+# デプロイスクリプトを実行（自動ビルド・プッシュ・デプロイ）
+./deploy.sh <GCP-PROJECT-ID> [region] [service-name]
+
+# 例
+./deploy.sh my-gcp-project asia-northeast1 slack-reminder-bot
+```
+
+スクリプトが以下の処理を自動実行します：
+1. GCP 認証確認
+2. Docker イメージのビルド
+3. Container Registry へのプッシュ
+4. Cloud Run へのデプロイ
+5. ヘルスチェック実行
+
+### 📖 詳細手順
+
+- **クイックスタート**: `DEPLOY_QUICK.md` を参照
+- **詳細設定**: `DEPLOY.md` を参照
+
+### 🔐 Secret Manager 設定（初回のみ）
+
+```bash
+# Slack 認証情報を GCP Secret Manager に登録
+echo -n "xoxb-your-token" | gcloud secrets create slack-bot-token --data-file=-
+echo -n "your-signing-secret" | gcloud secrets create slack-signing-secret --data-file=-
+```
+
+### ✅ デプロイ確認
+
+```bash
+# サービス URL を取得
+gcloud run services describe slack-reminder-bot --region asia-northeast1 --format='value(status.url)'
+
+# ヘルスチェック実行
+curl {SERVICE_URL}/health
+```
+
+### 📊 リソース設定（デフォルト）
+- **メモリ**: 512Mi
+- **CPU**: 1
+- **タイムアウト**: 3600s
+- **最大インスタンス**: 100
+
+### 🗑️ クリーンアップ
+
+```bash
+# サービス削除
+gcloud run services delete slack-reminder-bot --region asia-northeast1
+
+# Container Registry のイメージ削除
+gcloud container images delete gcr.io/PROJECT_ID/slack-reminder-bot --quiet
+```
+
+---
+
+## 📦 ファイル一覧
+
+| ファイル | 説明 |
+|---------|------|
+| `Dockerfile` | Cloud Run デプロイ用イメージ定義 |
+| `.dockerignore` | Docker ビルド時に除外するファイル |
+| `.gcloudignore` | gcloud デプロイ時に除外するファイル |
+| `deploy.sh` | ワンコマンド デプロイスクリプト |
+| `DEPLOY.md` | デプロイ詳細ドキュメント |
+| `DEPLOY_QUICK.md` | デプロイクイックガイド |

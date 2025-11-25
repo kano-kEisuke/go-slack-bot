@@ -94,11 +94,13 @@ func NewConfig() (*Config, error) {
 	return config, nil
 }
 
-// mustGetEnv は環境変数を取得し、存在しない場合はpanicします
+// mustGetEnv は環境変数を取得し、存在しない場合は警告を出して空文字を返します（起動優先）
+// 本番では必須値は Cloud Run の環境変数または Secret Manager で必ず設定してください。
 func mustGetEnv(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		panic(fmt.Sprintf("required environment variable not set: %s", key))
+		// 起動時にパニックせず、ログに警告を出す
+		fmt.Fprintf(os.Stderr, "[WARN] required environment variable not set: %s\n", key)
 	}
 	return value
 }

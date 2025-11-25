@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*.swn
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+vendor/
+
+# Build artifacts
+*.o
+*.a
+*.so
+.dll
+*.dylib
+*.out
+*.exe
+*.exe~
+*.test
+
+# Go
+dist/
+build/
+
+# Documentation
+docs/
+*.md
+
+# Docker
+.dockerignore
+Dockerfile
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Test coverage
+coverage/
+*.cover
+*.prof
+
+# Temporary files
+tmp/
+temp/
+*.log

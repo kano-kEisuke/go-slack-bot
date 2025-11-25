@@ -1,0 +1,62 @@
+# This file specifies files that should NOT be uploaded to Google Cloud
+# when using "gcloud run deploy" with source argument.
+
+# Git
+.git/
+.gitignore
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+*.o
+*.a
+*.so
+*.dll
+*.dylib
+*.out
+*.exe
+
+# Dependencies (will be re-downloaded)
+vendor/
+node_modules/
+
+# Test and coverage
+coverage/
+*.cover
+*.prof
+*_test.go
+
+# Documentation
+docs/
+*.md
+
+# Temporary files
+tmp/
+temp/
+*.log
+
+# Docker files (gcloud will handle the build)
+.docker/
+.dockerignore
+Dockerfile
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+.env
+.env.local
+*.bak
