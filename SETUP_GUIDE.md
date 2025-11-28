@@ -1,0 +1,373 @@
+# 🚀 Slack Reminder Bot - 完全セットアップガイド
+
+このガイドに従って、段階的にセットアップを進めてください。
+
+---
+
+## 📋 セットアップの全体フロー
+
+```
+【フェーズ1】GCP プロジェクト作成 （初回のみ・30分）
+    ↓
+【フェーズ2】Slack App 作成 （初回のみ・20分）
+    ↓
+【フェーズ3】環境変数設定 （初回のみ・15分）
+    ↓
+【フェーズ4】デプロイ実行 （毎回・10分）
+```
+
+**所要時間**: 初回 = 1時間半程度 / 更新時 = 10分
+
+---
+
+## 🎯 フェーズ1: GCP プロジェクト作成（初回のみ）
+
+### 1-1. GCP コンソールで新規プロジェクトを作成
+
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. ページ上部の **プロジェクト選択** をクリック
+3. **新しいプロジェクト** をクリック
+4. プロジェクト名を入力（例：`slack-reminder-bot`）
+5. **作成** をクリック
+
+### 1-2. 必要な API を有効化
+
+```bash
+# Firestore API
+gcloud services enable firestore.googleapis.com
+
+# Cloud Run API
+gcloud services enable run.googleapis.com
+
+# Cloud Tasks API
+gcloud services enable cloudtasks.googleapis.com
+
+# Secret Manager API
+gcloud services enable secretmanager.googleapis.com
+
+# Container Registry API
+gcloud services enable containerregistry.googleapis.com
+```
+
+### 1-3. サービスアカウントを作成
+
+```bash
+# サービスアカウント作成
+gcloud iam service-accounts create slack-bot-service \
+  --display-name="Slack Reminder Bot Service Account"
+
+# プロジェクト ID を確認
+export PROJECT_ID=$(gcloud config get-value project)
+
+# Cloud Run Invoker ロールを付与
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/run.invoker"
+
+# Cloud Tasks Task Runner ロールを付与
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/cloudtasks.taskRunner"
+
+# Secret Manager Secret Accessor ロールを付与
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+### 1-4. Firestore を初期化
+
+```bash
+# Firestore データベース作成（Firestore ネイティブモード）
+gcloud firestore databases create --region=asia-northeast1
+```
+
+### 1-5. Cloud Tasks キューを作成
+
+```bash
+# 10分リマインドキュー
+gcloud tasks queues create remind-queue \
+  --location=asia-northeast1
+
+# 30分エスカレーションキュー
+gcloud tasks queues create escalate-queue \
+  --location=asia-northeast1
+```
+
+**✅ フェーズ1 完了！**
+
+---
+
+## 🤖 フェーズ2: Slack App 作成（初回のみ）
+
+[`SLACK_SETUP.md`](SLACK_SETUP.md) を参照してください。
+
+以下を取得して、メモしておいてください：
+- Signing Secret
+- Client ID
+- Client Secret
+
+**✅ フェーズ2 完了！**
+
+---
+
+## 📝 フェーズ3: 環境変数設定（初回のみ）
+
+### 3-1. .env ファイルを作成
+
+```bash
+cp .env.example .env
+```
+
+### 3-2. .env を編集
+
+```bash
+nano .env
+```
+
+または、テキストエディタで `.env` を開いて、以下の値を入力します：
+
+#### GCP 設定部分
+
+```env
+GCP_PROJECT=my-slack-bot-project    # ← GCP プロジェクト ID に変更
+REGION=asia-northeast1              # 東京推奨
+FIRESTORE_PROJECT_ID=my-slack-bot-project  # ← 同じく GCP プロジェクト ID
+
+FS_COLLECTION_TENANTS=tenants       # そのまま
+FS_COLLECTION_MENTIONS=mentions     # そのまま
+```
+
+確認方法：
+```bash
+# GCP プロジェクト ID を確認
+gcloud config get-value project
+```
+
+#### Slack 設定部分
+
+```env
+SLACK_SIGNING_SECRET=xoxb-abc123...  # ← フェーズ2 で取得した値
+SLACK_CLIENT_ID=1234567890.xxx...    # ← フェーズ2 で取得した値
+SLACK_CLIENT_SECRET=your-secret...   # ← フェーズ2 で取得した値
+
+OAUTH_REDIRECT_URL=https://slack-reminder-bot-xxxxx.run.app/slack/oauth_redirect
+# ↑ 初回は仮で OK。デプロイ後に実際の URL で上書き
+
+OAUTH_STATE_SECRET=<以下のコマンドで生成>
+```
+
+OAUTH_STATE_SECRET を生成：
+```bash
+openssl rand -base64 32
+```
+
+出力された値を `OAUTH_STATE_SECRET=` の後に貼り付けます。
+
+#### Cloud Tasks 設定部分
+
+```bash
+# 以下のコマンドで各値を確認
+gcloud tasks queues list --location=asia-northeast1
+
+# 出力例：
+# NAME                   LOCATION            RESPONSE_HANDLER
+# remind-queue           asia-northeast1
+# escalate-queue         asia-northeast1
+```
+
+`.env` に入力：
+```env
+TASKS_QUEUE_REMIND=projects/my-slack-bot-project/locations/asia-northeast1/queues/remind-queue
+TASKS_QUEUE_ESCALATE=projects/my-slack-bot-project/locations/asia-northeast1/queues/escalate-queue
+TASKS_AUDIENCE=https://slack-reminder-bot-xxxxx.run.app
+# ↑ こちらも初回は仮で OK（デプロイ後に更新）
+
+TASKS_SERVICE_ACCOUNT=slack-bot-service@my-slack-bot-project.iam.gserviceaccount.com
+```
+
+確認方法：
+```bash
+gcloud iam service-accounts list
+```
+
+#### タイミング設定
+
+```env
+REMIND_AFTER=10m      # 10分後にリマインド
+ESCALATE_AFTER=30m    # 30分後にエスカレーション
+```
+
+### 3-3. 環境変数を検証
+
+.env を保存した後、スクリプトを実行して環境変数をチェック：
+
+```bash
+./deploy.sh
+```
+
+すべての環境変数が正しく設定されていれば、デプロイに進みます。
+
+**✅ フェーズ3 完了！**
+
+---
+
+## 🚀 フェーズ4: デプロイ実行（毎回）
+
+### 4-1. デプロイスクリプトを実行
+
+```bash
+# GCP プロジェクト ID を指定してデプロイ
+./deploy.sh my-slack-bot-project
+```
+
+### 4-2. 出力を確認
+
+デプロイが成功すると、以下のように表示されます：
+
+```
+✅ デプロイが完了しました！
+
+📍 サービス URL: https://slack-reminder-bot-abc123.run.app
+
+💚 ヘルスチェック: OK
+
+🎯 次のステップ:
+  1. Slack App Dashboard で OAUTH_REDIRECT_URL を更新
+     URL: https://slack-reminder-bot-abc123.run.app/slack/oauth_redirect
+  2. https://api.slack.com/apps にアクセス
+  3. OAuth & Permissions → Redirect URLs を更新
+  4. .env ファイルの OAUTH_REDIRECT_URL も更新
+```
+
+### 4-3. Slack App 設定を更新
+
+1. [Slack App Dashboard](https://api.slack.com/apps) にアクセス
+2. 自分のアプリを選択 → **OAuth & Permissions**
+3. **Redirect URLs** を編集
+4. 新しい URL を追加：`https://slack-reminder-bot-abc123.run.app/slack/oauth_redirect`
+5. **変更を保存**
+
+### 4-4. .env ファイルを更新
+
+```bash
+# .env を開く
+nano .env
+
+# OAUTH_REDIRECT_URL と TASKS_AUDIENCE を実際の URL に変更
+OAUTH_REDIRECT_URL=https://slack-reminder-bot-abc123.run.app/slack/oauth_redirect
+TASKS_AUDIENCE=https://slack-reminder-bot-abc123.run.app
+```
+
+### 4-5. 再度デプロイ（重要！）
+
+```bash
+./deploy.sh my-slack-bot-project
+```
+
+**✅ デプロイ完了！**
+
+---
+
+## 🔍 デプロイ後の確認
+
+### ヘルスチェック
+
+```bash
+SERVICE_URL=$(gcloud run services describe slack-reminder-bot --region asia-northeast1 --format='value(status.url)')
+curl $SERVICE_URL/health
+# 出力: ok
+```
+
+### ログ確認
+
+```bash
+gcloud run services logs read slack-reminder-bot --region asia-northeast1 --limit 50
+```
+
+### リアルタイムログ
+
+```bash
+gcloud alpha run services logs read slack-reminder-bot --region asia-northeast1 --limit 50 --follow
+```
+
+---
+
+## 🐛 トラブルシューティング
+
+### エラー: `.env ファイルが見つかりません`
+
+```bash
+cp .env.example .env
+nano .env  # 値を入力
+./deploy.sh
+```
+
+### エラー: `環境変数が設定されていません`
+
+`.env` ファイルを確認して、不足している値を入力してください。
+
+```bash
+nano .env
+```
+
+### エラー: `GCP にログインしていません`
+
+```bash
+gcloud auth login
+```
+
+### エラー: `docker: command not found`
+
+[Docker Desktop をインストール](https://www.docker.com/products/docker-desktop)
+
+### デプロイは完了したが、ログにエラーが出ている
+
+```bash
+# ログを確認
+gcloud run services logs read slack-reminder-bot --region asia-northeast1 --limit 50
+
+# よくあるエラー:
+# - Secret Manager 権限なし
+#   → サービスアカウントに roles/secretmanager.secretAccessor を付与
+# - Firestore 接続失敗
+#   → GCP_PROJECT と FIRESTORE_PROJECT_ID が同じか確認
+# - Cloud Tasks キュー不正
+#   → TASKS_QUEUE_REMIND, TASKS_QUEUE_ESCALATE が正しいか確認
+```
+
+---
+
+## 📚 次のステップ
+
+1. **Slack App を Workspace にインストール**
+   - [`SLACK_SETUP.md`](SLACK_SETUP.md) 参照
+
+2. **Slack でテスト**
+   - チャンネルで `@bot @user-name` とメンション
+   - 10分後にリマインドが送信されるか確認
+
+3. **本番環境へ**
+   - 上長 DM 通知の設定
+   - 監視対象チャンネルの確認
+
+---
+
+## 📞 サポート
+
+問題が発生した場合：
+
+1. **ログを確認**
+   ```bash
+   gcloud run services logs read slack-reminder-bot --region asia-northeast1
+   ```
+
+2. **環境変数を確認**
+   ```bash
+   gcloud run services describe slack-reminder-bot --region asia-northeast1
+   ```
+
+3. **詳細は各ガイドを参照**
+   - GCP 設定: [`GCP_SETUP.md`](GCP_SETUP.md)
+   - Slack 設定: [`SLACK_SETUP.md`](SLACK_SETUP.md)
+   - デプロイ詳細: [`DEPLOY.md`](DEPLOY.md)
