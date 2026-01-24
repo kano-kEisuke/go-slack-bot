@@ -7,92 +7,32 @@
 ## 📋 セットアップの全体フロー
 
 ```
-【フェーズ1】GCP プロジェクト作成 （初回のみ・30分）
+【フェーズ1】GCP プロジェクト作成 （初回のみ・40分）
     ↓
 【フェーズ2】Slack App 作成 （初回のみ・20分）
     ↓
-【フェーズ3】環境変数設定 （初回のみ・15分）
+【フェーズ3】環境変数設定 （初回のみ・10分）
     ↓
 【フェーズ4】デプロイ実行 （毎回・10分）
 ```
 
-**所要時間**: 初回 = 1時間半程度 / 更新時 = 10分
+**所要時間**: 初回 = 1時間20分程度 / 更新時 = 10分
 
 ---
 
 ## 🎯 フェーズ1: GCP プロジェクト作成（初回のみ）
 
-### 1-1. GCP コンソールで新規プロジェクトを作成
+[`GCP_SETUP.md`](GCP_SETUP.md) を参照してください。
 
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
-2. ページ上部の **プロジェクト選択** をクリック
-3. **新しいプロジェクト** をクリック
-4. プロジェクト名を入力（例：`slack-reminder-bot`）
-5. **作成** をクリック
+以下を実行：
+1. GCP プロジェクト作成
+2. 必要な API を有効化（6つ）
+3. Firestore データベース作成
+4. Cloud Tasks キュー作成（2つ）
+5. サービスアカウント作成・権限設定（5つ）
+6. **Secret Manager に OAuth State Secret を登録**
 
-### 1-2. 必要な API を有効化
-
-```bash
-# Firestore API
-gcloud services enable firestore.googleapis.com
-
-# Cloud Run API
-gcloud services enable run.googleapis.com
-
-# Cloud Tasks API
-gcloud services enable cloudtasks.googleapis.com
-
-# Secret Manager API
-gcloud services enable secretmanager.googleapis.com
-
-# Container Registry API
-gcloud services enable containerregistry.googleapis.com
-```
-
-### 1-3. サービスアカウントを作成
-
-```bash
-# サービスアカウント作成
-gcloud iam service-accounts create slack-bot-service \
-  --display-name="Slack Reminder Bot Service Account"
-
-# プロジェクト ID を確認
-export PROJECT_ID=$(gcloud config get-value project)
-
-# Cloud Run Invoker ロールを付与
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/run.invoker"
-
-# Cloud Tasks Task Runner ロールを付与
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/cloudtasks.taskRunner"
-
-# Secret Manager Secret Accessor ロールを付与
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor"
-```
-
-### 1-4. Firestore を初期化
-
-```bash
-# Firestore データベース作成（Firestore ネイティブモード）
-gcloud firestore databases create --region=asia-northeast1
-```
-
-### 1-5. Cloud Tasks キューを作成
-
-```bash
-# 10分リマインドキュー
-gcloud tasks queues create remind-queue \
-  --location=asia-northeast1
-
-# 30分エスカレーションキュー
-gcloud tasks queues create escalate-queue \
-  --location=asia-northeast1
-```
+**⚠️ 重要**: Slack 認証情報（Signing Secret, Client ID, Client Secret）は、フェーズ2の後に Secret Manager に登録します。
 
 **✅ フェーズ1 完了！**
 
@@ -102,10 +42,26 @@ gcloud tasks queues create escalate-queue \
 
 [`SLACK_SETUP.md`](SLACK_SETUP.md) を参照してください。
 
-以下を取得して、メモしておいてください：
+以下を取得して、Secret Manager に登録します：
 - Signing Secret
 - Client ID
 - Client Secret
+
+### Secret Manager への登録（フェーズ2の後に実行）
+
+```bash
+# Slack Signing Secret を登録
+echo -n "your-signing-secret-here" | \
+  gcloud secrets create slack-signing-secret --data-file=-
+
+# Slack Client ID を登録
+echo -n "your-client-id-here" | \
+  gcloud secrets create slack-client-id --data-file=-
+
+# Slack Client Secret を登録
+echo -n "your-client-secret-here" | \
+  gcloud secrets create slack-client-secret --data-file=-
+```
 
 **✅ フェーズ2 完了！**
 
@@ -146,23 +102,25 @@ gcloud config get-value project
 
 #### Slack 設定部分
 
-```env
-SLACK_SIGNING_SECRET=xoxb-abc123...  # ← フェーズ2 で取得した値
-SLACK_CLIENT_ID=1234567890.xxx...    # ← フェーズ2 で取得した値
-SLACK_CLIENT_SECRET=your-secret...   # ← フェーズ2 で取得した値
+⚠️ **重要**: Slack認証情報は環境変数ではなく、Secret Managerに保存されます。
 
+`.env`ファイルには以下のダミー値を設定してください（デプロイスクリプトの検証用）:
+
+```env
+SLACK_SIGNING_SECRET=from-secret-manager
+SLACK_CLIENT_ID=from-secret-manager
+SLACK_CLIENT_SECRET=from-secret-manager
+OAUTH_STATE_SECRET=from-secret-manager
+```
+
+実際の値はSecret Managerから自動で読み込まれます。
+
+#### OAuth Redirect URL
+
+```env
 OAUTH_REDIRECT_URL=https://slack-reminder-bot-xxxxx.run.app/slack/oauth_redirect
 # ↑ 初回は仮で OK。デプロイ後に実際の URL で上書き
-
-OAUTH_STATE_SECRET=<以下のコマンドで生成>
 ```
-
-OAUTH_STATE_SECRET を生成：
-```bash
-openssl rand -base64 32
-```
-
-出力された値を `OAUTH_STATE_SECRET=` の後に貼り付けます。
 
 #### Cloud Tasks 設定部分
 

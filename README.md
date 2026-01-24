@@ -6,36 +6,46 @@
 
 **初めてセットアップする方は、このセクションから開始してください！**
 
-### 📖 セットアップガイド（全4フェーズ・1時間半）
+### 📖 セットアップガイド（全4フェーズ・1時間20分）
 
 ```
-【フェーズ1】GCP セットアップ（30分）
+【フェーズ1】GCP セットアップ（40分）
   → GCP_SETUP.md を参照
+  → Secret Manager に OAuth State Secret を登録
   
 【フェーズ2】Slack App 作成（20分）
   → SLACK_SETUP.md を参照
+  → Signing Secret, Client ID, Client Secret を取得
+  → Secret Manager に登録
   
-【フェーズ3】Secret Manager 設定（15分）⭐ 重要
-  → ENV_SETUP.md を参照
-  → スクリプト実行: ./scripts/setup_secrets.sh
+【フェーズ3】環境変数設定（10分）
+  → .env.example をコピーして .env を作成
+  → GCPプロジェクトID等を設定
   
 【フェーズ4】デプロイ実行（10分）
-  → SETUP_GUIDE.md のフェーズ4 を参照
+  → ./deploy.sh でCloud Runにデプロイ
 ```
 
 ### 🔥 5分でわかる全体図
 
 ```
 1️⃣ GCP コンソールでプロジェクト作成
+   + Secret Manager API を有効化
    ↓
-2️⃣ Slack API ダッシュボードで App 作成
+2️⃣ Secret Manager に OAuth State Secret を登録
+   openssl rand -base64 32 で生成
    ↓
-3️⃣ 認証情報を GCP Secret Manager に保存 ⭐
-   ./scripts/setup_secrets.sh を実行
+3️⃣ Slack API ダッシュボードで App 作成
    ↓
-4️⃣ ./deploy.sh で自動デプロイ
+4️⃣ Slack認証情報を Secret Manager に保存 ⭐
+   Signing Secret, Client ID, Client Secret
    ↓
-5️⃣ 完了！Slack で Bot が動作
+5️⃣ .env ファイルを作成（ダミー値でOK）
+   SLACK_* は from-secret-manager
+   ↓
+6️⃣ ./deploy.sh で自動デプロイ
+   ↓
+7️⃣ 完了！Slack で OAuth インストール
 ```
 
 ### 📚 詳細ドキュメント
@@ -43,24 +53,24 @@
 | ドキュメント | 説明 | 対象者 |
 |-----------|------|--------|
 | **[SETUP_GUIDE.md](SETUP_GUIDE.md)** | 完全セットアップガイド | 初心者向け |
-| **[GCP_SETUP.md](GCP_SETUP.md)** | GCP プロジェクト設定 | GCP 初心者向け |
-| **[ENV_SETUP.md](ENV_SETUP.md)** | Secret Manager 設定 ⭐ | セキュリティ重視 |
+| **[GCP_SETUP.md](GCP_SETUP.md)** | GCP プロジェクト設定＋Secret Manager | GCP 初心者向け |
+| **[ENV_SETUP.md](ENV_SETUP.md)** | Secret Manager 詳細設定 ⭐ | セキュリティ重視 |
 | **[SLACK_SETUP.md](SLACK_SETUP.md)** | Slack App 作成 | Slack 初心者向け |
-| **[DEPLOY.md](DEPLOY.md)** | デプロイ詳細ガイド | 詳細を知りたい方向け |
-| **[DEPLOY_QUICK.md](DEPLOY_QUICK.md)** | デプロイクイックガイド | スクリプト使用方法 |
 
-### ⚡ すぐにはじめたい方
+### ⚡ すぐにはじめたい方（既にSecret Manager設定済み）
 
 ```bash
-# 1. GCP・Slack セットアップ完了済みの方
+# 1. .envファイル作成
 cp .env.example .env
-nano .env  # 値を入力
+nano .env  # GCPプロジェクトID等を入力
 
 # 2. デプロイ実行
-./deploy.sh my-gcp-project
+./deploy.sh
 
 # ✅ 完了！
 ```
+
+**注意**: Slack認証情報は環境変数ではなく、Secret Managerから自動で読み込まれます。
 
 ---
 

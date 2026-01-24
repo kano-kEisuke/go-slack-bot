@@ -13,9 +13,10 @@
 4. Firestore データベース作成
 5. Cloud Tasks キューを作成
 6. サービスアカウント作成・権限設定
+7. Secret Manager にシークレット登録
 ```
 
-**所要時間**: 30分
+**所要時間**: 40分
 
 ---
 
@@ -190,96 +191,119 @@ gcloud iam service-accounts create slack-bot-service \
   --display-name="Slack Reminder Bot Service Account"
 ```
 
-### ステップ2: サービスアカウント確認
+### ステップ2: 必要な権限を付与
 
 ```bash
-gcloud iam service-accounts list
+export PROJECT_ID=$(gcloud config get-value project)
+
+# 1. Cloud Run Invoker（Cloud Run の起動）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/run.invoker"
+
+# 2. Firestore User（Firestore の読み書き）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/datastore.user"
+
+# 3. Cloud Tasks Enqueuer（タスクの作成）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/cloudtasks.enqueuer"
+
+# 4. Secret Manager Secret Accessor（シークレットの読み取り）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+# 5. Secret Manager Admin（シークレットの作成・更新、OAuth時に必要）
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.admin"
+```
+
+### ステップ3: 権限の確認
+
+```bash
+gcloud projects get-iam-policy $PROJECT_ID \
+  --flatten="bindings[].members" \
+  --filter="bindings.members:serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
+  --format="table(bindings.role)"
 ```
 
 出力例：
+```
+ROLE
+roles/run.invoker
+roles/datastore.user
+roles/cloudtasks.enqueuer
+roles/secretmanager.secretAccessor
+roles/secretmanager.admin
 ```
 DISPLAY NAME                          EMAIL
 Slack Reminder Bot Service Account    slack-bot-service@my-slack-bot-project.iam.gserviceaccount.com
 ```
 
-`.env` に設定：
-```env
-TASKS_SERVICE_ACCOUNT=slack-bot-service@my-slack-bot-project.iam.gserviceaccount.com
-```
-
-### ステップ3: 権限を付与
-
-```bash
-export PROJECT_ID=$(gcloud config get-value project)
-export SERVICE_ACCOUNT="slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com"
-
-# Cloud Run Invoker（Cloud Run を呼び出し可能）
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT" \
-  --role="roles/run.invoker"
-
-# Cloud Tasks Task Runner（Cloud Tasks を実行可能）
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT" \
-  --role="roles/cloudtasks.taskRunner"
-
-# Secret Manager Secret Accessor（Secret Manager にアクセス可能）
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT" \
-  --role="roles/secretmanager.secretAccessor"
-
-# Cloud Logging Log Writer（ログを書き込み可能）
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT" \
-  --role="roles/logging.logWriter"
-
-# Firestore User（Firestore にアクセス可能）
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:$SERVICE_ACCOUNT" \
-  --role="roles/datastore.user"
-```
-
-### ステップ4: 権限確認
-
-```bash
-gcloud projects get-iam-policy $PROJECT_ID \
-  --flatten="bindings[].members" \
-  --filter="bindings.members:serviceAccount:slack-bot-service*" \
-  --format="table(bindings.role)"
-```
-
-以下の7つが表示されれば OK：
-- roles/run.invoker
-- roles/cloudtasks.taskRunner
-- roles/secretmanager.secretAccessor
-- roles/logging.logWriter
-- roles/datastore.user
-
 ---
 
-## 📝 Slack 認証情報を Secret Manager に登録
+## 7️⃣ Secret Manager にシークレット登録
 
-### ステップ1: Secret Manager に登録
+このアプリは、Slack認証情報をSecret Managerで管理します。環境変数ではなく、GCPのSecret Managerに保存することでセキュリティを強化しています。
+
+### ステップ1: OAuth State Secret を生成・登録
 
 ```bash
-# Slack Signing Secret
-echo -n "xoxb-your-signing-secret" | \
+# ランダムな文字列を生成
+openssl rand -base64 32
+# 出力例: abc123xyz789...（これをコピー）
+
+# Secret Manager に登録
+echo -n "abc123xyz789..." | \
+  gcloud secrets create oauth-state-secret --data-file=-
+```
+
+### ステップ2: Slack認証情報を登録（Slack App作成後）
+
+⚠️ **重要**: 以下のコマンドは、[SLACK_SETUP.md](SLACK_SETUP.md)でSlack Appを作成した後に実行してください。
+
+```bash
+# Slack Signing Secret を登録
+# Slack App Dashboard → Settings → Basic Information → App Credentials → Signing Secret
+echo -n "your-signing-secret-here" | \
   gcloud secrets create slack-signing-secret --data-file=-
 
-# Slack Bot Token（後で登録）
-# 各 Workspace ごとに必要です。Slack インストール後に実行。
+# Slack Client ID を登録
+# Slack App Dashboard → Settings → Basic Information → App Credentials → Client ID
+echo -n "your-client-id-here" | \
+  gcloud secrets create slack-client-id --data-file=-
+
+# Slack Client Secret を登録
+# Slack App Dashboard → Settings → Basic Information → App Credentials → Client Secret
+echo -n "your-client-secret-here" | \
+  gcloud secrets create slack-client-secret --data-file=-
 ```
 
-### ステップ2: サービスアカウントに権限を付与
+### ステップ3: Secret一覧確認
 
 ```bash
-export PROJECT_ID=$(gcloud config get-value project)
-
-# Signing Secret
-gcloud secrets add-iam-policy-binding slack-signing-secret \
-  --member="serviceAccount:slack-bot-service@$PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor"
+gcloud secrets list
 ```
+
+出力例：
+```
+NAME                      CREATED              REPLICATION_POLICY  LOCATIONS
+oauth-state-secret        2024-01-15T10:00:00  automatic           -
+slack-signing-secret      2024-01-15T10:01:00  automatic           -
+slack-client-id           2024-01-15T10:02:00  automatic           -
+slack-client-secret       2024-01-15T10:03:00  automatic           -
+```
+
+### 📝 Secret Managerの仕組み
+
+- **環境変数に直接書かない**: `.env`ファイルには`from-secret-manager`というダミー値のみ
+- **実行時に取得**: アプリ起動時にSecret Managerから実際の値を取得
+- **OAuth時に自動作成**: Slack AppをインストールするとBot Tokenが自動で`slack_token_{TEAM_ID}`として保存される
+- **権限管理**: サービスアカウントに`secretmanager.admin`権限を付与済み（ステップ6で実施）
 
 ---
 
@@ -289,12 +313,13 @@ gcloud secrets add-iam-policy-binding slack-signing-secret \
 
 - [ ] `gcloud auth list` でログイン確認
 - [ ] GCP プロジェクト作成済み
-- [ ] 必要な API が有効化済み
+- [ ] 必要な API が有効化済み（6つ）
 - [ ] Firestore データベース作成済み
 - [ ] Cloud Tasks キュー 2 つ作成済み
 - [ ] サービスアカウント作成済み
 - [ ] サービスアカウントに 5 つの権限付与済み
-- [ ] Secret Manager にシークレット登録済み
+- [ ] Secret Manager に OAuth State Secret 登録済み
+- [ ] Secret Manager に Slack 認証情報登録済み（Slack App 作成後）
 
 ---
 
