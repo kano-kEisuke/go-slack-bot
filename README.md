@@ -1,5 +1,28 @@
 # Slack返信リマインドBot 仕様書
 
+## 🛠️ 使用技術
+
+### バックエンド
+- **Go** 1.25.0
+- **アーキテクチャ**: クリーンアーキテクチャ（Domain / Infrastructure / Service / Handler）
+
+### GCP (Google Cloud Platform)
+- **Cloud Run**: サーバーレスアプリケーション実行環境
+- **Firestore**: NoSQLデータベース
+- **Secret Manager**: 機密情報管理
+- **Cloud Tasks**: 非同期タスク処理
+
+### Slack
+- **Slack API**: 
+  - Events API（メッセージイベント検知）
+  - Web API（メッセージ送信、ユーザー情報取得）
+  - OAuth 2.0（認証・認可）
+  - Slash Commands（コマンド処理）
+
+### その他
+- **Docker**: コンテナ化
+- **GitHub Actions**: CI/CD（想定）
+
 ---
 
 ## 🚀 クイックスタート
