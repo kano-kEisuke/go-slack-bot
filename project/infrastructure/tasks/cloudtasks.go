@@ -1,35 +1,41 @@
 package tasks
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"slack-bot/project/infrastructure/config"
 	"slack-bot/project/service"
+
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
+	"cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // CloudTasksClient は service.TaskPort の Cloud Tasks 実装です
 type CloudTasksClient struct {
-	project    string
-	region     string
-	audience   string // OIDC Audience (Cloud Run サービスの URL)
-	svcAcct    string // Service Account メールアドレス
-	httpClient *http.Client
+	client   *cloudtasks.Client
+	project  string
+	region   string
+	audience string // OIDC Audience (Cloud Run サービスの URL)
+	svcAcct  string // Service Account メールアドレス
 }
 
 // NewCloudTasksClient は Cloud Tasks クライアントを初期化します
 func NewCloudTasksClient(ctx context.Context, cfg *config.Config) (*CloudTasksClient, error) {
+	client, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cloudtasks: クライアント初期化失敗: %w", err)
+	}
+
 	return &CloudTasksClient{
-		project:    cfg.GcpProject,
-		region:     cfg.Region,
-		audience:   cfg.TasksAudience,
-		svcAcct:    cfg.TasksServiceAccount,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		client:   client,
+		project:  cfg.GcpProject,
+		region:   cfg.Region,
+		audience: cfg.TasksAudience,
+		svcAcct:  cfg.TasksServiceAccount,
 	}, nil
 }
 
@@ -53,53 +59,34 @@ func (ct *CloudTasksClient) enqueueTask(ctx context.Context, queueName, path str
 		return fmt.Errorf("cloudtasks: ペイロード JSON 化失敗: %w", err)
 	}
 
-	// OIDC トークンを取得
-	audience := ct.audience
-
-	// Cloud Tasks API への HTTP リクエストボディを構築
-	taskBody := map[string]interface{}{
-		"httpRequest": map[string]interface{}{
-			"uri":        fmt.Sprintf("%s%s", audience, path),
-			"body":       string(payloadBytes),
-			"headers":    map[string]string{"Content-Type": "application/json"},
-			"httpMethod": "POST",
-			"oidcToken": map[string]interface{}{
-				"serviceAccountEmail": ct.svcAcct,
-				"audience":            audience,
+	// タスクリクエストを構築
+	task := &cloudtaskspb.Task{
+		MessageType: &cloudtaskspb.Task_HttpRequest{
+			HttpRequest: &cloudtaskspb.HttpRequest{
+				Url:        fmt.Sprintf("%s%s", ct.audience, path),
+				HttpMethod: cloudtaskspb.HttpMethod_POST,
+				Headers:    map[string]string{"Content-Type": "application/json"},
+				Body:       payloadBytes,
+				AuthorizationHeader: &cloudtaskspb.HttpRequest_OidcToken{
+					OidcToken: &cloudtaskspb.OidcToken{
+						ServiceAccountEmail: ct.svcAcct,
+						Audience:            ct.audience,
+					},
+				},
 			},
 		},
-		"scheduleTime": time.Unix(runAtUnix, 0).Format(time.RFC3339),
+		ScheduleTime: timestamppb.New(time.Unix(runAtUnix, 0)),
 	}
 
-	taskBodyJSON, err := json.Marshal(taskBody)
+	// タスクを作成
+	req := &cloudtaskspb.CreateTaskRequest{
+		Parent: queueName,
+		Task:   task,
+	}
+
+	_, err = ct.client.CreateTask(ctx, req)
 	if err != nil {
-		return fmt.Errorf("cloudtasks: タスクボディ JSON 化失敗: %w", err)
-	}
-
-	// Cloud Tasks API エンドポイント
-	url := fmt.Sprintf("https://cloudtasks.googleapis.com/v2/%s/tasks", queueName)
-
-	// HTTP リクエスト作成
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(taskBodyJSON))
-	if err != nil {
-		return fmt.Errorf("cloudtasks: リクエスト作成失敗: %w", err)
-	}
-
-	// OIDC トークンをヘッダーに追加
-	// Cloud Run から Cloud Tasks API を呼ぶ場合、ワークロード ID 連携で自動的に認証される
-	req.Header.Set("Content-Type", "application/json")
-
-	// リクエスト送信
-	resp, err := ct.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("cloudtasks: リクエスト送信失敗 (queue=%s, path=%s): %w", queueName, path, err)
-	}
-	defer resp.Body.Close()
-
-	// レスポンスステータスチェック
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("cloudtasks: API エラー (status=%d): %s", resp.StatusCode, string(body))
+		return fmt.Errorf("cloudtasks: タスク作成失敗 (queue=%s, path=%s): %w", queueName, path, err)
 	}
 
 	return nil
@@ -107,8 +94,8 @@ func (ct *CloudTasksClient) enqueueTask(ctx context.Context, queueName, path str
 
 // Close は Cloud Tasks クライアントを閉じます（リソースクリーンアップ）
 func (ct *CloudTasksClient) Close() error {
-	if ct.httpClient != nil {
-		ct.httpClient.CloseIdleConnections()
+	if ct.client != nil {
+		return ct.client.Close()
 	}
 	return nil
 }
