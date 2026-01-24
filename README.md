@@ -33,41 +33,36 @@
 ```
 【フェーズ1】GCP セットアップ
   → GCP_SETUP.md を参照
-  → Secret Manager に OAuth State Secret を登録
+  → GCPプロジェクト作成
+  → 必要なAPI有効化（Firestore, Cloud Run, Cloud Tasks, Secret Manager）
+  → Firestore データベース作成
+  → Cloud Tasks キュー作成
+  → サービスアカウント作成・権限設定
   
 【フェーズ2】Slack App 作成
   → SLACK_SETUP.md を参照
-  → Signing Secret, Client ID, Client Secret を取得
-  → Secret Manager に登録
+  → Slack API Dashboard で App 作成
+  → Signing Secret, Client ID, Client Secret を取得（メモ）
   
-【フェーズ3】環境変数設定
+【フェーズ3】Secret Manager に認証情報を登録
+  → OAuth State Secret を生成・登録
+     `openssl rand -base64 32 | gcloud secrets create oauth-state-secret --data-file=-`
+  → Slack 認証情報を登録
+     ```bash
+     echo -n "取得したsigning-secret" | gcloud secrets create slack-signing-secret --data-file=-
+     echo -n "取得したclient-id" | gcloud secrets create slack-client-id --data-file=-
+     echo -n "取得したclient-secret" | gcloud secrets create slack-client-secret --data-file=-
+     ```
+  
+【フェーズ4】環境変数設定
   → .env.example をコピーして .env を作成
-  → GCPプロジェクトID等を設定
+     `cp .env.example .env`
+  → GCPプロジェクトID、リージョン、Cloud Tasksキュー名等を設定
+  → **Slack認証情報は不要**（Secret Managerから自動取得）
   
-【フェーズ4】デプロイ実行
+【フェーズ5】デプロイ実行
   → ./deploy.sh でCloud Runにデプロイ
-```
-
-### 全体図
-
-```
-1️⃣ GCP コンソールでプロジェクト作成
-   + Secret Manager API を有効化
-   ↓
-2️⃣ Secret Manager に OAuth State Secret を登録
-   openssl rand -base64 32 で生成
-   ↓
-3️⃣ Slack API ダッシュボードで App 作成
-   ↓
-4️⃣ Slack認証情報を Secret Manager に保存 ⭐
-   Signing Secret, Client ID, Client Secret
-   ↓
-5️⃣ .env ファイルを作成（ダミー値でOK）
-   SLACK_* は from-secret-manager
-   ↓
-6️⃣ ./deploy.sh で自動デプロイ
-   ↓
-7️⃣ 完了！Slack で OAuth インストール
+  → アプリ起動時にSecret Managerから認証情報を自動読み込み
 ```
 
 ### 📚 詳細ドキュメント
@@ -437,5 +432,3 @@ gcloud container images delete gcr.io/PROJECT_ID/slack-reminder-bot --quiet
 | `.dockerignore` | Docker ビルド時に除外するファイル |
 | `.gcloudignore` | gcloud デプロイ時に除外するファイル |
 | `deploy.sh` | ワンコマンド デプロイスクリプト |
-| `DEPLOY.md` | デプロイ詳細ドキュメント |
-| `DEPLOY_QUICK.md` | デプロイクイックガイド |
