@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"slack-bot/project/domain"
@@ -35,6 +37,9 @@ func NewOAuthHandler(cfg *config.Config, tenantRepository domain.TenantRepositor
 func (h *OAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// クエリパラメータから code を取得
 	code := r.URL.Query().Get("code")
+	state := r.URL.Query().Get("state")
+	log.Printf("OAuth callback: code=%s, state=%s", code, state)
+
 	if code == "" {
 		http.Error(w, "code パラメータが不足しています", http.StatusBadRequest)
 		return
@@ -46,27 +51,37 @@ func (h *OAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	tokenResp, err := h.exchangeToken(ctx, code)
 	if err != nil {
+		log.Printf("トークン交換失敗: %v", err)
 		http.Error(w, fmt.Sprintf("トークン交換失敗: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	if !tokenResp.OK {
+		log.Printf("OAuth エラー: %s", tokenResp.Error)
 		http.Error(w, fmt.Sprintf("OAuth エラー: %s", tokenResp.Error), http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("OAuth成功: TeamID=%s", tokenResp.Team.ID)
+
 	// Secret Manager にトークンを保存
 	secretName := fmt.Sprintf("slack_token_%s", tokenResp.Team.ID)
 	if err := h.secretManager.PutSecret(ctx, secretName, tokenResp.AccessToken); err != nil {
+		log.Printf("トークン保存失敗: %v", err)
 		http.Error(w, fmt.Sprintf("トークン保存失敗: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("Secret保存成功: %s", secretName)
+
 	// Tenant として登録
 	if err := h.tenantRepository.UpsertBotTokenSecret(ctx, tokenResp.Team.ID, secretName); err != nil {
+		log.Printf("テナント登録失敗: %v", err)
 		http.Error(w, fmt.Sprintf("テナント登録失敗: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("テナント登録成功: TeamID=%s", tokenResp.Team.ID)
 
 	// インストール成功画面を表示
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -93,28 +108,24 @@ func (h *OAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // exchangeToken は OAuth code をトークンに交換します
 func (h *OAuthHandler) exchangeToken(ctx context.Context, code string) (*dto.SlackTokenResponse, error) {
 	// OAuth API エンドポイント
-	url := "https://slack.com/api/oauth.v2.access"
+	apiURL := "https://slack.com/api/oauth.v2.access"
 
-	// リクエストボディ
-	reqBody := dto.SlackTokenRequest{
-		ClientID:     h.cfg.SlackClientID,
-		ClientSecret: h.cfg.SlackClientSecret,
-		Code:         code,
-		RedirectURI:  h.cfg.OAuthRedirectURL,
-	}
+	// application/x-www-form-urlencoded 形式でリクエストボディを作成
+	formData := url.Values{}
+	formData.Set("client_id", h.cfg.SlackClientID)
+	formData.Set("client_secret", h.cfg.SlackClientSecret)
+	formData.Set("code", code)
+	formData.Set("redirect_uri", h.cfg.OAuthRedirectURL)
 
-	bodyBytes, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("リクエスト JSON 化失敗: %w", err)
-	}
+	log.Printf("OAuth token exchange: client_id=%s, redirect_uri=%s", h.cfg.SlackClientID, h.cfg.OAuthRedirectURL)
 
 	// POST リクエスト
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBufferString(formData.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("リクエスト作成失敗: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -127,6 +138,8 @@ func (h *OAuthHandler) exchangeToken(ctx context.Context, code string) (*dto.Sla
 	if err != nil {
 		return nil, fmt.Errorf("レスポンス本体読み込み失敗: %w", err)
 	}
+
+	log.Printf("Slack OAuth response: %s", string(respBody))
 
 	var tokenResp dto.SlackTokenResponse
 	if err := json.Unmarshal(respBody, &tokenResp); err != nil {

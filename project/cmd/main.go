@@ -19,8 +19,8 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// 1. 設定を読み込む
-	cfg, err := config.NewConfig()
+	// 1. 設定を読み込む（Secret Manager からセンシティブ情報を取得）
+	cfg, err := config.NewConfig(ctx)
 	if err != nil {
 		log.Fatalf("設定読み込み失敗: %v", err)
 	}

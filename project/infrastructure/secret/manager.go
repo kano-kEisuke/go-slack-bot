@@ -57,18 +57,26 @@ func (m *Manager) PutSecret(ctx context.Context, secretName, secretValue string)
 	// リソース名
 	name := fmt.Sprintf("projects/%s/secrets/%s", m.projectID, secretName)
 
-	// シークレット作成リクエスト（既存の場合はスキップ）
-	createReq := &secretmanagerpb.CreateSecretRequest{
-		Parent:   fmt.Sprintf("projects/%s", m.projectID),
-		SecretId: secretName,
-		Secret:   &secretmanagerpb.Secret{},
-	}
-
-	// 既存チェック（GetSecret でシークレット存在確認）
+	// 既存チェック
 	_, err := m.client.GetSecret(ctx, &secretmanagerpb.GetSecretRequest{Name: name})
 	if err != nil {
-		// シークレットが存在しない場合、作成を試みる（エラーは無視）
-		_, _ = m.client.CreateSecret(ctx, createReq)
+		// シークレットが存在しない場合、作成
+		createReq := &secretmanagerpb.CreateSecretRequest{
+			Parent:   fmt.Sprintf("projects/%s", m.projectID),
+			SecretId: secretName,
+			Secret: &secretmanagerpb.Secret{
+				Replication: &secretmanagerpb.Replication{
+					Replication: &secretmanagerpb.Replication_Automatic_{
+						Automatic: &secretmanagerpb.Replication_Automatic{},
+					},
+				},
+			},
+		}
+
+		_, err = m.client.CreateSecret(ctx, createReq)
+		if err != nil {
+			return fmt.Errorf("secret manager: シークレット作成失敗 (name=%s): %w", secretName, err)
+		}
 	}
 
 	// バージョンを追加

@@ -37,7 +37,22 @@ func (h *EventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// Slack 署名検証
+	// まず url_verification かどうかを確認（署名検証の前に）
+	var preCheck struct {
+		Type      string `json:"type"`
+		Challenge string `json:"challenge"`
+	}
+	if err := json.Unmarshal(body, &preCheck); err == nil {
+		if preCheck.Type == "url_verification" {
+			// URL 検証に応答（署名検証をスキップ）
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(preCheck.Challenge))
+			return
+		}
+	}
+
+	// Slack 署名検証（url_verification 以外のリクエスト）
 	signature := r.Header.Get("X-Slack-Signature")
 	timestamp := r.Header.Get("X-Slack-Request-Timestamp")
 	if err := httpsec.VerifySlackSignature(h.signingSecret, signature, timestamp, string(body)); err != nil {
@@ -45,18 +60,10 @@ func (h *EventsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// JSON パース
+	// JSON パース（完全版）
 	var req dto.SlackEventRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		http.Error(w, "JSON パース失敗", http.StatusBadRequest)
-		return
-	}
-
-	// URL 検証に応答
-	if req.Type == "url_verification" {
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(req.Challenge))
 		return
 	}
 

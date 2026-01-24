@@ -1,9 +1,13 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 // Config は環境変数から読み込まれるアプリケーション設定を表します
@@ -20,7 +24,7 @@ type Config struct {
 
 	// OAuth設定
 	OAuthRedirectURL string
-	OAuthStateSecret string // Secret Manager推奨
+	OAuthStateSecret string // Secret Manager から読み込み
 
 	// Cloud Tasks設定
 	TasksQueueRemind    string
@@ -29,9 +33,9 @@ type Config struct {
 	TasksServiceAccount string
 
 	// Slack API設定
-	SlackClientID      string // Secret Manager推奨
-	SlackClientSecret  string // Secret Manager推奨
-	SlackSigningSecret string // Secret Manager推奨
+	SlackClientID      string // Secret Manager から読み込み
+	SlackClientSecret  string // Secret Manager から読み込み
+	SlackSigningSecret string // Secret Manager から読み込み
 	SecretTokenPrefix  string
 
 	// リマインド設定
@@ -40,7 +44,17 @@ type Config struct {
 }
 
 // NewConfig は環境変数から設定を読み込み、Config構造体を返します
-func NewConfig() (*Config, error) {
+// センシティブな情報（Slack認証情報など）はSecret Managerから取得します
+func NewConfig(ctx context.Context) (*Config, error) {
+	gcpProject := mustGetEnv("GCP_PROJECT")
+
+	// Secret Manager クライアントを初期化
+	secretClient, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Secret Manager クライアント初期化失敗: %v", err)
+	}
+	defer secretClient.Close()
+
 	remindAfter := os.Getenv("REMIND_AFTER")
 	if remindAfter == "" {
 		remindAfter = "10m" // デフォルト値
@@ -59,10 +73,31 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("invalid ESCALATE_AFTER format: %v", err)
 	}
 
+	// Secret Manager から Slack 認証情報を取得
+	slackSigningSecret, err := getSecretFromManager(ctx, secretClient, gcpProject, "slack-signing-secret")
+	if err != nil {
+		return nil, fmt.Errorf("SLACK_SIGNING_SECRET 取得失敗: %v", err)
+	}
+
+	slackClientID, err := getSecretFromManager(ctx, secretClient, gcpProject, "slack-client-id")
+	if err != nil {
+		return nil, fmt.Errorf("SLACK_CLIENT_ID 取得失敗: %v", err)
+	}
+
+	slackClientSecret, err := getSecretFromManager(ctx, secretClient, gcpProject, "slack-client-secret")
+	if err != nil {
+		return nil, fmt.Errorf("SLACK_CLIENT_SECRET 取得失敗: %v", err)
+	}
+
+	oauthStateSecret, err := getSecretFromManager(ctx, secretClient, gcpProject, "oauth-state-secret")
+	if err != nil {
+		return nil, fmt.Errorf("OAUTH_STATE_SECRET 取得失敗: %v", err)
+	}
+
 	config := &Config{
 		// 基本設定
 		AppBaseURL: mustGetEnv("APP_BASE_URL"),
-		GcpProject: mustGetEnv("GCP_PROJECT"),
+		GcpProject: gcpProject,
 		Region:     mustGetEnv("REGION"),
 
 		// Firestore設定
@@ -72,7 +107,7 @@ func NewConfig() (*Config, error) {
 
 		// OAuth設定
 		OAuthRedirectURL: mustGetEnv("OAUTH_REDIRECT_URL"),
-		OAuthStateSecret: mustGetEnv("OAUTH_STATE_SECRET"),
+		OAuthStateSecret: oauthStateSecret,
 
 		// Cloud Tasks設定
 		TasksQueueRemind:    mustGetEnv("TASKS_QUEUE_REMIND"),
@@ -80,10 +115,10 @@ func NewConfig() (*Config, error) {
 		TasksAudience:       mustGetEnv("TASKS_AUDIENCE"),
 		TasksServiceAccount: mustGetEnv("TASKS_SERVICE_ACCOUNT"),
 
-		// Slack API設定
-		SlackClientID:      mustGetEnv("SLACK_CLIENT_ID"),
-		SlackClientSecret:  mustGetEnv("SLACK_CLIENT_SECRET"),
-		SlackSigningSecret: mustGetEnv("SLACK_SIGNING_SECRET"),
+		// Slack API設定（Secret Manager から取得）
+		SlackClientID:      slackClientID,
+		SlackClientSecret:  slackClientSecret,
+		SlackSigningSecret: slackSigningSecret,
 		SecretTokenPrefix:  mustGetEnv("SECRET_TOKEN_PREFIX"),
 
 		// リマインド設定
@@ -94,13 +129,32 @@ func NewConfig() (*Config, error) {
 	return config, nil
 }
 
-// mustGetEnv は環境変数を取得し、存在しない場合は警告を出して空文字を返します（起動優先）
-// 本番では必須値は Cloud Run の環境変数または Secret Manager で必ず設定してください。
+// getSecretFromManager は Secret Manager から指定されたシークレットを取得します
+func getSecretFromManager(ctx context.Context, client *secretmanager.Client, projectID, secretName string) (string, error) {
+	name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectID, secretName)
+
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: name,
+	}
+
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("Secret Manager からの取得失敗 (name=%s): %w", secretName, err)
+	}
+
+	secret := string(result.Payload.Data)
+	if secret == "" {
+		return "", fmt.Errorf("Secret Manager のシークレット値が空です (name=%s)", secretName)
+	}
+
+	return secret, nil
+}
+
+// mustGetEnv は環境変数を取得し、存在しない場合はパニックします
 func mustGetEnv(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		// 起動時にパニックせず、ログに警告を出す
-		fmt.Fprintf(os.Stderr, "[WARN] required environment variable not set: %s\n", key)
+		panic(fmt.Sprintf("required environment variable not set: %s", key))
 	}
 	return value
 }

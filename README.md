@@ -15,8 +15,9 @@
 【フェーズ2】Slack App 作成（20分）
   → SLACK_SETUP.md を参照
   
-【フェーズ3】環境変数設定（15分）
-  → SETUP_GUIDE.md のフェーズ3 を参照
+【フェーズ3】Secret Manager 設定（15分）⭐ 重要
+  → ENV_SETUP.md を参照
+  → スクリプト実行: ./scripts/setup_secrets.sh
   
 【フェーズ4】デプロイ実行（10分）
   → SETUP_GUIDE.md のフェーズ4 を参照
@@ -29,7 +30,8 @@
    ↓
 2️⃣ Slack API ダッシュボードで App 作成
    ↓
-3️⃣ 認証情報を .env ファイルに記入
+3️⃣ 認証情報を GCP Secret Manager に保存 ⭐
+   ./scripts/setup_secrets.sh を実行
    ↓
 4️⃣ ./deploy.sh で自動デプロイ
    ↓
@@ -42,6 +44,7 @@
 |-----------|------|--------|
 | **[SETUP_GUIDE.md](SETUP_GUIDE.md)** | 完全セットアップガイド | 初心者向け |
 | **[GCP_SETUP.md](GCP_SETUP.md)** | GCP プロジェクト設定 | GCP 初心者向け |
+| **[ENV_SETUP.md](ENV_SETUP.md)** | Secret Manager 設定 ⭐ | セキュリティ重視 |
 | **[SLACK_SETUP.md](SLACK_SETUP.md)** | Slack App 作成 | Slack 初心者向け |
 | **[DEPLOY.md](DEPLOY.md)** | デプロイ詳細ガイド | 詳細を知りたい方向け |
 | **[DEPLOY_QUICK.md](DEPLOY_QUICK.md)** | デプロイクイックガイド | スクリプト使用方法 |

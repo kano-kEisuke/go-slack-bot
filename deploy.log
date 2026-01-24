@@ -1,0 +1,317 @@
+📋 .env ファイルから設定を読み込み中...
+📦 Cloud Run デプロイスクリプト
+========================================
+プロジェクト ID: slack-reminder-bot-20251114
+リージョン: asia-northeast1
+サービス名: slack-reminder-bot
+========================================
+
+🔍 環境変数を検証中...
+[0;32m✅ 全ての環境変数が設定されています[0m
+[1;33mℹ️  Slack認証情報はSecret Managerから取得されます[0m
+
+🔐 GCP 認証確認...
+
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+
+[0;32m✅ GCP にログイン済み[0m
+
+🔧 プロジェクト設定...
+Updated property [core/project].
+[0;32m✅ プロジェクトを設定しました: slack-reminder-bot-20251114[0m
+
+🐳 Docker buildx の確認...
+[0;32m✅ Docker buildx は利用可能です[0m
+
+🗑️  古いイメージをクリア中...
+Total:	0B
+[0;32m✅ クリア完了[0m
+
+🔑 Container Registry に認証中...
+WARNING: Your config file at [/Users/keisukekano/.docker/config.json] contains these credential helper entries:
+
+{
+  "credHelpers": {
+    "asia.gcr.io": "gcloud",
+    "eu.gcr.io": "gcloud",
+    "gcr.io": "gcloud",
+    "marketplace.gcr.io": "gcloud",
+    "staging-k8s.gcr.io": "gcloud",
+    "us.gcr.io": "gcloud"
+  }
+}
+Adding credentials for: gcr.io
+gcloud credential helpers already registered correctly.
+[0;32m✅ 認証完了[0m
+
+🐳 Docker イメージをビルド中...
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.10kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for gcr.io/distroless/base-debian12:latest
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/golang:1.25.0
+#3 DONE 1.8s
+
+#2 [internal] load metadata for gcr.io/distroless/base-debian12:latest
+#2 DONE 2.4s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 436B done
+#4 DONE 0.0s
+
+#5 [stage-1 1/3] FROM gcr.io/distroless/base-debian12:latest@sha256:0c70ab46409b94a96f4e98e32e7333050581e75f7038de2877a4bfc146dfc7ce
+#5 resolve gcr.io/distroless/base-debian12:latest@sha256:0c70ab46409b94a96f4e98e32e7333050581e75f7038de2877a4bfc146dfc7ce 0.0s done
+#5 sha256:4082635fdb726d91c445651231acead6c25d5d59664877709e2461ec61be0b64 0B / 2.83MB 0.2s
+#5 ...
+
+#6 [internal] load build context
+#6 transferring context: 48.54MB 0.5s done
+#6 DONE 0.5s
+
+#5 [stage-1 1/3] FROM gcr.io/distroless/base-debian12:latest@sha256:0c70ab46409b94a96f4e98e32e7333050581e75f7038de2877a4bfc146dfc7ce
+#5 sha256:e7fa9df358f005850f690ad890b35d30e28b089082a944dc186f5ab3d7f04eb1 0B / 5.85MB 0.2s
+#5 sha256:069d1e267530c2e681fbd4d481553b4d05f98082b18fafac86e7f12996dddd0b 0B / 131.91kB 0.2s
+#5 sha256:dcaa5a89b0ccda4b283e16d0b4d0891cd93d5fe05c6798f7806781a6a2d84354 0B / 314B 0.2s
+#5 sha256:dcaa5a89b0ccda4b283e16d0b4d0891cd93d5fe05c6798f7806781a6a2d84354 314B / 314B 0.5s done
+#5 sha256:4aa0ea1413d37a58615488592a0b827ea4b2e48fa5a77cf707d0e35f025e613f 0B / 385B 0.2s
+#5 sha256:4aa0ea1413d37a58615488592a0b827ea4b2e48fa5a77cf707d0e35f025e613f 385B / 385B 0.4s done
+#5 sha256:dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112 0B / 80B 0.2s
+#5 sha256:dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112 80B / 80B 0.5s done
+#5 sha256:52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296 0B / 162B 0.2s
+#5 sha256:52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296 162B / 162B 0.8s done
+#5 sha256:069d1e267530c2e681fbd4d481553b4d05f98082b18fafac86e7f12996dddd0b 131.91kB / 131.91kB 2.4s done
+#5 sha256:3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4 0B / 123B 0.2s
+#5 sha256:7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212 0B / 188B 0.2s
+#5 sha256:3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4 123B / 123B 0.5s done
+#5 sha256:7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212 188B / 188B 0.5s done
+#5 sha256:2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a 0B / 67B 0.2s
+#5 sha256:62de241dac5fe19d5f8f4defe034289006ddaa0f2cca735db4718fe2a23e504e 0B / 31.24kB 0.2s
+#5 sha256:2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a 67B / 67B 0.4s done
+#5 sha256:017886f7e1764618ffad6fbd503c42a60076c63adc16355cac80f0f311cae4c9 0B / 544.07kB 0.2s
+#5 sha256:62de241dac5fe19d5f8f4defe034289006ddaa0f2cca735db4718fe2a23e504e 31.24kB / 31.24kB 1.0s done
+#5 sha256:bfb59b82a9b65e47d485e53b3e815bca3b3e21a095bd0cb88ced9ac0b48062bf 0B / 13.36kB 0.2s
+#5 sha256:bfb59b82a9b65e47d485e53b3e815bca3b3e21a095bd0cb88ced9ac0b48062bf 13.36kB / 13.36kB 0.9s done
+#5 sha256:fab8c4b3fa32236a59c44cc504a69b18788d5c17c045691c2d682267ae8cf468 0B / 104.22kB 0.2s
+#5 sha256:4082635fdb726d91c445651231acead6c25d5d59664877709e2461ec61be0b64 0B / 2.83MB 5.3s
+#5 sha256:e7fa9df358f005850f690ad890b35d30e28b089082a944dc186f5ab3d7f04eb1 0B / 5.85MB 5.3s
+#5 sha256:fab8c4b3fa32236a59c44cc504a69b18788d5c17c045691c2d682267ae8cf468 104.22kB / 104.22kB 1.7s done
+#5 extracting sha256:fab8c4b3fa32236a59c44cc504a69b18788d5c17c045691c2d682267ae8cf468 0.0s done
+#5 extracting sha256:bfb59b82a9b65e47d485e53b3e815bca3b3e21a095bd0cb88ced9ac0b48062bf done
+#5 sha256:017886f7e1764618ffad6fbd503c42a60076c63adc16355cac80f0f311cae4c9 544.07kB / 544.07kB 3.6s done
+#5 extracting sha256:017886f7e1764618ffad6fbd503c42a60076c63adc16355cac80f0f311cae4c9 0.1s done
+#5 extracting sha256:62de241dac5fe19d5f8f4defe034289006ddaa0f2cca735db4718fe2a23e504e done
+#5 extracting sha256:2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a done
+#5 extracting sha256:7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212 done
+#5 extracting sha256:3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4 done
+#5 extracting sha256:52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296 done
+#5 extracting sha256:dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112 done
+#5 extracting sha256:4aa0ea1413d37a58615488592a0b827ea4b2e48fa5a77cf707d0e35f025e613f done
+#5 extracting sha256:dcaa5a89b0ccda4b283e16d0b4d0891cd93d5fe05c6798f7806781a6a2d84354 done
+#5 extracting sha256:069d1e267530c2e681fbd4d481553b4d05f98082b18fafac86e7f12996dddd0b done
+#5 sha256:4082635fdb726d91c445651231acead6c25d5d59664877709e2461ec61be0b64 1.05MB / 2.83MB 7.8s
+#5 sha256:e7fa9df358f005850f690ad890b35d30e28b089082a944dc186f5ab3d7f04eb1 1.05MB / 5.85MB 9.6s
+#5 ...
+
+#7 [builder 1/6] FROM docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe
+#7 resolve docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe 0.0s done
+#7 sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B 0.4s done
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 11.53MB / 60.05MB 9.8s
+#7 sha256:82e0cc681648f441c1c9d7f2865b7619bb2312671c777fa33768270a808a76ac 126B / 126B 0.8s done
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 10.49MB / 102.06MB 9.8s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 12.58MB / 67.78MB 9.3s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 14.68MB / 25.61MB 9.0s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 16.78MB / 25.61MB 10.2s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 14.68MB / 60.05MB 11.4s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 16.78MB / 67.78MB 11.4s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 18.87MB / 25.61MB 11.3s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 17.83MB / 60.05MB 13.1s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 20.97MB / 25.61MB 12.3s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 20.97MB / 67.78MB 13.5s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 23.07MB / 25.61MB 13.4s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 15.73MB / 102.06MB 14.3s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 20.97MB / 60.05MB 14.4s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 25.17MB / 25.61MB 14.4s
+#7 sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 25.61MB / 25.61MB 14.6s done
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 0B / 49.28MB 0.2s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 24.12MB / 60.05MB 15.8s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 25.17MB / 67.78MB 15.9s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 27.26MB / 60.05MB 17.1s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 3.15MB / 49.28MB 1.7s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 6.29MB / 49.28MB 2.6s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 30.41MB / 60.05MB 18.9s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 29.36MB / 67.78MB 18.9s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 9.44MB / 49.28MB 3.8s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 19.92MB / 102.06MB 19.4s
+#7 ...
+
+#5 [stage-1 1/3] FROM gcr.io/distroless/base-debian12:latest@sha256:0c70ab46409b94a96f4e98e32e7333050581e75f7038de2877a4bfc146dfc7ce
+#5 sha256:4082635fdb726d91c445651231acead6c25d5d59664877709e2461ec61be0b64 2.83MB / 2.83MB 11.3s done
+#5 sha256:e7fa9df358f005850f690ad890b35d30e28b089082a944dc186f5ab3d7f04eb1 5.24MB / 5.85MB 19.7s
+#5 sha256:e7fa9df358f005850f690ad890b35d30e28b089082a944dc186f5ab3d7f04eb1 5.85MB / 5.85MB 19.9s done
+#5 ...
+
+#7 [builder 1/6] FROM docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe
+#7 ...
+
+#5 [stage-1 1/3] FROM gcr.io/distroless/base-debian12:latest@sha256:0c70ab46409b94a96f4e98e32e7333050581e75f7038de2877a4bfc146dfc7ce
+#5 extracting sha256:e7fa9df358f005850f690ad890b35d30e28b089082a944dc186f5ab3d7f04eb1 0.1s done
+#5 extracting sha256:4082635fdb726d91c445651231acead6c25d5d59664877709e2461ec61be0b64 0.0s done
+#5 DONE 20.3s
+
+#7 [builder 1/6] FROM docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 12.58MB / 49.28MB 4.7s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 15.73MB / 49.28MB 5.6s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 33.55MB / 60.05MB 21.2s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 18.87MB / 49.28MB 6.5s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 33.55MB / 67.78MB 22.1s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 22.02MB / 49.28MB 7.5s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 36.70MB / 60.05MB 23.6s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 25.17MB / 49.28MB 8.4s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 24.12MB / 102.06MB 24.5s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 28.31MB / 49.28MB 9.3s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 31.46MB / 49.28MB 10.1s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 37.75MB / 67.78MB 25.5s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 34.60MB / 49.28MB 10.7s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 39.85MB / 60.05MB 26.3s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 37.75MB / 49.28MB 11.4s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 40.89MB / 49.28MB 12.0s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 42.99MB / 60.05MB 28.2s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 44.04MB / 49.28MB 12.8s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 47.19MB / 49.28MB 13.5s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 29.36MB / 102.06MB 29.4s
+#7 sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 49.28MB / 49.28MB 14.0s done
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 41.94MB / 67.78MB 29.3s
+#7 extracting sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 46.14MB / 60.05MB 29.9s
+#7 extracting sha256:80b7316254b3093eb3c7ac44bb6c34bde013f27947c1ed8d8afe456b957ebfdb 0.6s done
+#7 extracting sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829
+#7 extracting sha256:36e4db86de6eba33869491caa7946b80dd71c255f1940e96a9f755cc2b1f3829 0.3s done
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 49.28MB / 60.05MB 30.8s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 52.43MB / 60.05MB 31.5s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 46.14MB / 67.78MB 31.2s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 55.57MB / 60.05MB 32.3s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 34.60MB / 102.06MB 32.3s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 58.72MB / 60.05MB 33.0s
+#7 sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 60.05MB / 60.05MB 33.2s done
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 50.33MB / 67.78MB 33.5s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 39.85MB / 102.06MB 34.5s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 54.53MB / 67.78MB 34.1s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 58.72MB / 67.78MB 34.8s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 45.09MB / 102.06MB 35.9s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 62.91MB / 67.78MB 35.6s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 67.11MB / 67.78MB 36.3s
+#7 sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 67.78MB / 67.78MB 36.4s done
+#7 extracting sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 50.33MB / 102.06MB 37.1s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 55.57MB / 102.06MB 37.5s
+#7 extracting sha256:8ea45766c6449310ca2fc621a7e00bedb4b9b803a7fbfe2607efce6d2e07e435 0.8s done
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 61.87MB / 102.06MB 38.1s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 67.11MB / 102.06MB 38.6s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 72.35MB / 102.06MB 39.2s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 77.59MB / 102.06MB 39.6s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 82.84MB / 102.06MB 40.1s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 88.08MB / 102.06MB 40.5s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 94.37MB / 102.06MB 41.1s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 100.66MB / 102.06MB 41.7s
+#7 sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 102.06MB / 102.06MB 41.8s done
+#7 DONE 42.0s
+
+#7 [builder 1/6] FROM docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe
+#7 extracting sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca
+#7 extracting sha256:ce11f29b0a47819a4e86298a507cdbac74b7882bf33a76326ce2b0f6fb2c70ca 1.1s done
+#7 DONE 43.1s
+
+#7 [builder 1/6] FROM docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe
+#7 extracting sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2
+#7 extracting sha256:8286cb4ece30afb97c398c2b5ac1f35e8f502f758d4ea2fc69e179efdf471ea2 1.4s done
+#7 DONE 44.6s
+
+#7 [builder 1/6] FROM docker.io/library/golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe
+#7 extracting sha256:82e0cc681648f441c1c9d7f2865b7619bb2312671c777fa33768270a808a76ac done
+#7 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+#7 DONE 44.6s
+
+#8 [builder 2/6] WORKDIR /workspace
+#8 DONE 0.4s
+
+#9 [builder 3/6] COPY go.mod go.sum ./
+#9 DONE 0.0s
+
+#10 [builder 4/6] RUN go mod download
+#10 DONE 12.9s
+
+#11 [builder 5/6] COPY . .
+#11 DONE 0.1s
+
+#12 [builder 6/6] RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /workspace/slack-reminder-bot ./project/cmd/main.go
+#12 DONE 49.7s
+
+#13 [stage-1 2/3] COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+#13 DONE 0.0s
+
+#14 [stage-1 3/3] COPY --from=builder /workspace/slack-reminder-bot /slack-reminder-bot
+#14 DONE 0.0s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 0.6s done
+#15 exporting manifest sha256:a99b0fef5b914dc6f6766960761b801cfb2f5ac95d8244e58f7a255ec93ee6d4 0.0s done
+#15 exporting config sha256:ecf4bee48530a61028945c52d45ae5831907ac4ec3b63d46db55a27c6f2ad8b1 done
+#15 exporting attestation manifest sha256:4a910cd88450f453c4e58ed44443be131c979079bcbf9b6a99a1326c754e9792 0.0s done
+#15 exporting manifest list sha256:d97c0e0881a8ac09207922e3f6bc9e8f3ffdc7fedf6ccb9a73b7a7eef1a8ddaa done
+#15 naming to gcr.io/slack-reminder-bot-20251114/slack-reminder-bot:latest done
+#15 DONE 0.7s
+
+#16 exporting to image
+#16 exporting layers 0.6s done
+#16 exporting manifest sha256:a99b0fef5b914dc6f6766960761b801cfb2f5ac95d8244e58f7a255ec93ee6d4 done
+#16 exporting config sha256:ecf4bee48530a61028945c52d45ae5831907ac4ec3b63d46db55a27c6f2ad8b1 done
+#16 exporting attestation manifest sha256:4a910cd88450f453c4e58ed44443be131c979079bcbf9b6a99a1326c754e9792 done
+#16 exporting manifest list sha256:d97c0e0881a8ac09207922e3f6bc9e8f3ffdc7fedf6ccb9a73b7a7eef1a8ddaa done
+#16 naming to gcr.io/slack-reminder-bot-20251114/slack-reminder-bot:latest done
+#16 pushing layers
+#16 ...
+
+#17 [auth] slack-reminder-bot-20251114/gcr.io/slack-reminder-bot:pull slack-reminder-bot-20251114/slack-reminder-bot:pull,push token for gcr.io
+#17 DONE 0.0s
+
+#16 exporting to image
+#16 pushing layers 9.4s done
+#16 pushing manifest for gcr.io/slack-reminder-bot-20251114/slack-reminder-bot:latest@sha256:d97c0e0881a8ac09207922e3f6bc9e8f3ffdc7fedf6ccb9a73b7a7eef1a8ddaa
+#16 pushing manifest for gcr.io/slack-reminder-bot-20251114/slack-reminder-bot:latest@sha256:d97c0e0881a8ac09207922e3f6bc9e8f3ffdc7fedf6ccb9a73b7a7eef1a8ddaa 3.2s done
+#16 DONE 13.2s
+[0;32m✅ Docker イメージをビルド & プッシュしました[0m
+
+🚀 Cloud Run にデプロイ中...
+Deploying container to Cloud Run service [[1mslack-reminder-bot[m] in project [[1mslack-reminder-bot-20251114[m] region [[1masia-northeast1[m]
+Deploying...
+Setting IAM Policy.............done
+Creating Revision.................................................................................done
+Routing traffic.....done
+Done.
+Service [[1mslack-reminder-bot[m] revision [[1mslack-reminder-bot-00011-tpw[m] has been deployed and is serving [1m100[m percent of traffic.
+Service URL: [1mhttps://slack-reminder-bot-448010247482.asia-northeast1.run.app[m
+[0;32m✅ Cloud Run へのデプロイが完了しました[0m
+
+========================================
+[0;32m✅ デプロイが完了しました！[0m
+========================================
+
+📍 サービス URL: https://slack-reminder-bot-hgeiac7hoq-an.a.run.app
+
+💚 ヘルスチェック実行中...
+[0;32m✅ ヘルスチェック: OK[0m
+
+📝 次のステップ:
+1. Slack App の URL を以下に更新してください:
+   - OAUTH_REDIRECT_URL: https://slack-reminder-bot-hgeiac7hoq-an.a.run.app/slack/oauth_redirect
+   - TASKS_AUDIENCE: https://slack-reminder-bot-hgeiac7hoq-an.a.run.app
+   - APP_BASE_URL: https://slack-reminder-bot-hgeiac7hoq-an.a.run.app
+2. .env ファイルを更新して再度デプロイしてください
+
