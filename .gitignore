@@ -1,0 +1,50 @@
+# 環境変数ファイル
+.env
+.env.local
+.env.*.local
+.env.save
+
+# GCP 認証情報
+*.json
+service-account-key.json
+application_default_credentials.json
+
+# Secret Manager のキャッシュ
+secrets/
+
+# ビルド成果物
+slack-reminder-bot
+main
+cmd/main
+/tmp/
+
+# IDE設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ログファイル
+*.log
+
+# Go
+vendor/
+go.sum.backup
+
+# Docker
+.dockerignore
+
+# テスト
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# 一時ファイル
+check_tenant.go
