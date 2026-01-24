@@ -328,4 +328,4 @@ gcloud run services logs read slack-reminder-bot --region asia-northeast1 --limi
 3. **詳細は各ガイドを参照**
    - GCP 設定: [`GCP_SETUP.md`](GCP_SETUP.md)
    - Slack 設定: [`SLACK_SETUP.md`](SLACK_SETUP.md)
-   - デプロイ詳細: [`DEPLOY.md`](DEPLOY.md)
+
