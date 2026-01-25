@@ -4,7 +4,6 @@
 
 ### バックエンド
 - **Go** 1.25.0
-- **アーキテクチャ**: クリーンアーキテクチャ（Domain / Infrastructure / Service / Handler）
 
 ### GCP (Google Cloud Platform)
 - **Cloud Run**: サーバーレスアプリケーション実行環境
