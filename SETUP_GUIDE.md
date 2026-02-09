@@ -86,9 +86,9 @@ nano .env
 #### GCP 設定部分
 
 ```env
-GCP_PROJECT=my-slack-bot-project    # ← GCP プロジェクト ID に変更
+GCP_PROJECT=your-gcp-project-id    # ← GCP プロジェクト ID に変更
 REGION=asia-northeast1              # 東京推奨
-FIRESTORE_PROJECT_ID=my-slack-bot-project  # ← 同じく GCP プロジェクト ID
+FIRESTORE_PROJECT_ID=your-gcp-project-id  # ← 同じく GCP プロジェクト ID
 
 FS_COLLECTION_TENANTS=tenants       # そのまま
 FS_COLLECTION_MENTIONS=mentions     # そのまま
@@ -136,12 +136,12 @@ gcloud tasks queues list --location=asia-northeast1
 
 `.env` に入力：
 ```env
-TASKS_QUEUE_REMIND=projects/my-slack-bot-project/locations/asia-northeast1/queues/remind-queue
-TASKS_QUEUE_ESCALATE=projects/my-slack-bot-project/locations/asia-northeast1/queues/escalate-queue
+TASKS_QUEUE_REMIND=projects/your-gcp-project-id/locations/asia-northeast1/queues/remind-queue
+TASKS_QUEUE_ESCALATE=projects/your-gcp-project-id/locations/asia-northeast1/queues/escalate-queue
 TASKS_AUDIENCE=https://slack-reminder-bot-xxxxx.run.app
 # ↑ こちらも初回は仮で OK（デプロイ後に更新）
 
-TASKS_SERVICE_ACCOUNT=slack-bot-service@my-slack-bot-project.iam.gserviceaccount.com
+TASKS_SERVICE_ACCOUNT=slack-bot-service@your-gcp-project-id.iam.gserviceaccount.com
 ```
 
 確認方法：
@@ -176,7 +176,7 @@ ESCALATE_AFTER=30m    # 30分後にエスカレーション
 
 ```bash
 # GCP プロジェクト ID を指定してデプロイ
-./deploy.sh my-slack-bot-project
+./deploy.sh your-gcp-project-id
 ```
 
 ### 4-2. 出力を確認
@@ -220,7 +220,7 @@ TASKS_AUDIENCE=https://slack-reminder-bot-abc123.run.app
 ### 4-5. 再度デプロイ（重要！）
 
 ```bash
-./deploy.sh my-slack-bot-project
+./deploy.sh your-gcp-project-id
 ```
 
 **✅ デプロイ完了！**

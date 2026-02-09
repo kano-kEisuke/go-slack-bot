@@ -53,15 +53,15 @@ gcloud auth login
 
 ```bash
 # プロジェクト作成
-gcloud projects create my-slack-bot-project \
+gcloud projects create your-gcp-project-id \
   --name="Slack Reminder Bot"
 
 # プロジェクト ID を確認
 gcloud config get-value project
-# 出力: my-slack-bot-project
+# 出力: your-gcp-project-id
 
 # プロジェクトを設定
-gcloud config set project my-slack-bot-project
+gcloud config set project your-gcp-project-id
 ```
 
 ### または、コンソールで作成
@@ -176,8 +176,8 @@ echo "Escalate Queue: projects/$PROJECT_ID/locations/asia-northeast1/queues/esca
 
 これらを `.env` ファイルに設定します：
 ```env
-TASKS_QUEUE_REMIND=projects/my-slack-bot-project/locations/asia-northeast1/queues/remind-queue
-TASKS_QUEUE_ESCALATE=projects/my-slack-bot-project/locations/asia-northeast1/queues/escalate-queue
+TASKS_QUEUE_REMIND=projects/your-gcp-project-id/locations/asia-northeast1/queues/remind-queue
+TASKS_QUEUE_ESCALATE=projects/your-gcp-project-id/locations/asia-northeast1/queues/escalate-queue
 ```
 
 ---
@@ -241,7 +241,7 @@ roles/secretmanager.secretAccessor
 roles/secretmanager.admin
 ```
 DISPLAY NAME                          EMAIL
-Slack Reminder Bot Service Account    slack-bot-service@my-slack-bot-project.iam.gserviceaccount.com
+Slack Reminder Bot Service Account    slack-bot-service@your-gcp-project-id.iam.gserviceaccount.com
 ```
 
 ---
